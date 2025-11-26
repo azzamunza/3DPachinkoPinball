@@ -255,7 +255,6 @@ function fireMortar() {
     const randomness = parseFloat(document.getElementById('audio-randomness').value) * 0.5;
 
     // Apply Audio Randomness Offsets (capped to prevent missed shots)
-    const randomX = (Math.random() - 0.5) * randomness * 5;
     const randomPower = (Math.random() - 0.5) * randomness * 3;
     const randomAngle = (Math.random() - 0.5) * randomness * 15;
 
