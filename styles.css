@@ -1,0 +1,393 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@400;600&display=swap');
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #0d1117;
+    color: #e2e8f0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+}
+
+.game-container {
+    display: grid;
+    grid-template-columns: 3fr 1fr;
+    max-width: 1400px;
+    width: 95%;
+    height: 90vh;
+    background-color: #161b22;
+    border-radius: 1rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+}
+
+#game-canvas {
+    background-color: #010409;
+    width: 100%;
+    height: 100%;
+}
+
+.controls-panel {
+    background-color: #21262d;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    overflow-y: auto;
+}
+
+.score-display {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 2.5rem;
+    color: #00ff7f; /* Neon Green */
+    text-shadow: 0 0 10px rgba(0, 255, 127, 0.8);
+    text-align: center;
+}
+
+.dial-group input[type="range"] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 8px;
+    background: #444;
+    outline: none;
+    opacity: 0.8;
+    transition: opacity .2s;
+    border-radius: 4px;
+}
+
+.dial-group input[type="range"]:hover {
+    opacity: 1;
+}
+
+.dial-group input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #38bdf8; /* Sky Blue */
+    cursor: pointer;
+    box-shadow: 0 0 5px rgba(56, 189, 248, 0.8);
+}
+
+#fire-button, #jackpot-pull {
+    padding: 0.75rem;
+    font-weight: bold;
+    font-size: 1.1rem;
+    border-radius: 0.5rem;
+    transition: transform 0.1s, box-shadow 0.1s;
+    border: none;
+    cursor: pointer;
+}
+
+#fire-button {
+    background-color: #ef4444; /* Red */
+    color: white;
+    box-shadow: 0 4px #b91c1c;
+}
+
+#fire-button:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px #b91c1c;
+}
+
+#jackpot-pull {
+    background-color: #facc15; /* Yellow */
+    color: #1f2937;
+    box-shadow: 0 4px #ca8a04;
+}
+
+#jackpot-pull:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px #ca8a04;
+}
+
+.jackpot-light-on {
+    border: 3px solid #f97316;
+    box-shadow: 0 0 15px rgba(249, 115, 22, 1), 0 0 30px rgba(249, 115, 22, 0.5);
+}
+
+/* Utility classes (replacing Tailwind) */
+.relative {
+    position: relative;
+}
+
+.absolute {
+    position: absolute;
+}
+
+.inset-0 {
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+}
+
+.flex {
+    display: flex;
+}
+
+.items-center {
+    align-items: center;
+}
+
+.justify-center {
+    justify-content: center;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.font-bold {
+    font-weight: 700;
+}
+
+.font-semibold {
+    font-weight: 600;
+}
+
+.font-extrabold {
+    font-weight: 800;
+}
+
+.text-white {
+    color: white;
+}
+
+.text-gray-300 {
+    color: #d1d5db;
+}
+
+.text-gray-400 {
+    color: #9ca3af;
+}
+
+.text-blue-400 {
+    color: #60a5fa;
+}
+
+.text-sky-400 {
+    color: #38bdf8;
+}
+
+.text-yellow-400 {
+    color: #facc15;
+}
+
+.text-teal-400 {
+    color: #2dd4bf;
+}
+
+.text-red-500 {
+    color: #ef4444;
+}
+
+.text-yellow-500 {
+    color: #eab308;
+}
+
+.text-green-500 {
+    color: #22c55e;
+}
+
+.bg-black\/80 {
+    background-color: rgba(0, 0, 0, 0.8);
+}
+
+.bg-gray-700 {
+    background-color: #374151;
+}
+
+.bg-gray-700\/50 {
+    background-color: rgba(55, 65, 81, 0.5);
+}
+
+.bg-gray-800 {
+    background-color: #1f2937;
+}
+
+.p-4 {
+    padding: 1rem;
+}
+
+.p-8 {
+    padding: 2rem;
+}
+
+.mb-2 {
+    margin-bottom: 0.5rem;
+}
+
+.mb-3 {
+    margin-bottom: 0.75rem;
+}
+
+.mb-4 {
+    margin-bottom: 1rem;
+}
+
+.mb-6 {
+    margin-bottom: 1.5rem;
+}
+
+.mt-2 {
+    margin-top: 0.5rem;
+}
+
+.mt-4 {
+    margin-top: 1rem;
+}
+
+.rounded-lg {
+    border-radius: 0.5rem;
+}
+
+.rounded-xl {
+    border-radius: 0.75rem;
+}
+
+.shadow-xl {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.shadow-inner {
+    box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+}
+
+.space-x-2 > * + * {
+    margin-left: 0.5rem;
+}
+
+.w-full {
+    width: 100%;
+}
+
+.w-16 {
+    width: 4rem;
+}
+
+.h-16 {
+    height: 4rem;
+}
+
+.text-lg {
+    font-size: 1.125rem;
+    line-height: 1.75rem;
+}
+
+.text-xl {
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+}
+
+.text-2xl {
+    font-size: 1.5rem;
+    line-height: 2rem;
+}
+
+.text-3xl {
+    font-size: 1.875rem;
+    line-height: 2.25rem;
+}
+
+.text-6xl {
+    font-size: 3.75rem;
+    line-height: 1;
+}
+
+.text-sm {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+}
+
+.text-xs {
+    font-size: 0.75rem;
+    line-height: 1rem;
+}
+
+.text-base {
+    font-size: 1rem;
+    line-height: 1.5rem;
+}
+
+.opacity-0 {
+    opacity: 0;
+}
+
+.pointer-events-none {
+    pointer-events: none;
+}
+
+.transition-opacity {
+    transition-property: opacity;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.transition-all {
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.duration-300 {
+    transition-duration: 300ms;
+}
+
+.duration-500 {
+    transition-duration: 500ms;
+}
+
+.float-right {
+    float: right;
+}
+
+.block {
+    display: block;
+}
+
+/* Control section styling */
+.control-section {
+    background-color: rgba(55, 65, 81, 0.5);
+    padding: 1rem;
+    border-radius: 0.5rem;
+}
+
+/* Score container */
+.score-container {
+    background-color: #1f2937;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+/* Dial group */
+.dial-group {
+    margin-bottom: 1rem;
+}
+
+.dial-group label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+}
+
+/* Reel styling */
+.reel {
+    width: 4rem;
+    height: 4rem;
+    background-color: #374151;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+}
+
+/* Jackpot overlay */
+#jackpot-overlay {
+    background-color: rgba(0, 0, 0, 0.8);
+}
