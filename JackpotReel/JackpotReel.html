@@ -417,8 +417,15 @@
             bottomBackLight.position.set(0, -10, -2);
             scene.add(bottomBackLight);
 
-            // --- MATERIALS ---
-            // Chrome/Silver metallic material for cabinet
+            // --- MATERIALS (Based on Double Diamond slot machine reference) ---
+            // Dark gray cabinet material - main body color matching reference
+            const cabinetMat = new THREE.MeshStandardMaterial({
+                color: 0x3a3a3a,
+                metalness: 0.3,
+                roughness: 0.6
+            });
+
+            // Chrome/Silver metallic for trim and accents
             const chromeMat = new THREE.MeshStandardMaterial({
                 color: 0xd4d4d4,
                 metalness: 0.95,
@@ -426,42 +433,40 @@
                 envMapIntensity: 1.0
             });
 
-            // Darker chrome for accents
+            // Darker chrome for secondary accents
             const darkChromeMat = new THREE.MeshStandardMaterial({
                 color: 0x888888,
                 metalness: 0.9,
                 roughness: 0.2
             });
 
-            // Red accent material
-            const redMat = new THREE.MeshStandardMaterial({
-                color: 0xcc0000,
-                metalness: 0.7,
-                roughness: 0.3,
-                emissive: 0x330000,
+            // Purple/Magenta accent material (matching Double Diamond theme)
+            const purpleMat = new THREE.MeshStandardMaterial({
+                color: 0x8b008b,
+                metalness: 0.4,
+                roughness: 0.4,
+                emissive: 0x330033,
                 emissiveIntensity: 0.3
             });
 
-            // Gold trim material
-            const goldMat = new THREE.MeshStandardMaterial({
-                color: 0xffd700,
+            // Chrome trim material
+            const chromeTrimMat = new THREE.MeshStandardMaterial({
+                color: 0xc0c0c0,
                 metalness: 1.0,
-                roughness: 0.15,
-                emissive: 0xaa6600,
-                emissiveIntensity: 0.2
+                roughness: 0.15
             });
 
-            // Emissive material for backlit panels
+            // Emissive material for backlit panels (purple-tinted like reference)
             const emissivePanelMat = new THREE.MeshStandardMaterial({
-                color: 0xffffee,
-                emissive: 0xffdd88,
-                emissiveIntensity: 0.8,
+                color: 0xeeddff,
+                emissive: 0x9966cc,
+                emissiveIntensity: 0.6,
                 roughness: 0.5
             });
 
             // Black plastic for button deck
             const blackPlasticMat = new THREE.MeshStandardMaterial({
-                color: 0x111111,
+                color: 0x1a1a1a,
                 metalness: 0.1,
                 roughness: 0.6
             });
@@ -471,52 +476,64 @@
             scene.add(machineGroup);
             machineGroupRef = machineGroup; // Store reference for animation
 
-            // ===== TOP BOX AREA =====
-            // Main top box housing
+            // ===== TOP BOX AREA (Rounded arch like Double Diamond reference) =====
+            // Main top box housing - dark gray like reference
             const topBoxGeo = new THREE.BoxGeometry(18, 6, 5);
-            const topBox = new THREE.Mesh(topBoxGeo, chromeMat);
+            const topBox = new THREE.Mesh(topBoxGeo, cabinetMat);
             topBox.position.set(0, 10, 0);
             topBox.castShadow = true;
             topBox.receiveShadow = true;
             machineGroup.add(topBox);
 
-            // Top box front panel (backlit logo area)
+            // Rounded arch top (half cylinder for dome effect)
+            const archGeo = new THREE.CylinderGeometry(9, 9, 5, 32, 1, false, 0, Math.PI);
+            const arch = new THREE.Mesh(archGeo, cabinetMat);
+            arch.rotation.x = Math.PI / 2;
+            arch.rotation.z = Math.PI;
+            arch.position.set(0, 13, 0);
+            machineGroup.add(arch);
+
+            // Top box front panel (backlit payout table area - purple tinted)
             const topPanelGeo = new THREE.BoxGeometry(16, 4.5, 0.3);
             const topPanel = new THREE.Mesh(topPanelGeo, emissivePanelMat);
             topPanel.position.set(0, 10, 2.6);
             machineGroup.add(topPanel);
 
-            // Gold trim around top panel
-            const topTrimTop = new THREE.Mesh(new THREE.BoxGeometry(17, 0.4, 0.5), goldMat);
+            // Chrome trim around top panel
+            const topTrimTop = new THREE.Mesh(new THREE.BoxGeometry(17, 0.4, 0.5), chromeTrimMat);
             topTrimTop.position.set(0, 12.5, 2.5);
             machineGroup.add(topTrimTop);
 
-            const topTrimBottom = new THREE.Mesh(new THREE.BoxGeometry(17, 0.4, 0.5), goldMat);
+            const topTrimBottom = new THREE.Mesh(new THREE.BoxGeometry(17, 0.4, 0.5), chromeTrimMat);
             topTrimBottom.position.set(0, 7.5, 2.5);
             machineGroup.add(topTrimBottom);
 
-            // Crown/topper decoration
-            const crownGeo = new THREE.CylinderGeometry(1.5, 2, 1.5, 8);
-            const crown = new THREE.Mesh(crownGeo, goldMat);
-            crown.position.set(0, 14, 0);
-            crown.rotation.y = Math.PI / 8;
-            machineGroup.add(crown);
+            // Top light (candle light on top like reference)
+            const topLightGeo = new THREE.CylinderGeometry(0.4, 0.5, 1.5, 12);
+            const topLightMat = new THREE.MeshStandardMaterial({
+                color: 0xffaa00,
+                emissive: 0xff6600,
+                emissiveIntensity: 1.0
+            });
+            const topLight = new THREE.Mesh(topLightGeo, topLightMat);
+            topLight.position.set(0, 16.5, 0);
+            machineGroup.add(topLight);
 
             // ===== REEL AREA (RECESSED) =====
-            // Main reel housing - recessed back
+            // Main reel housing - dark gray cabinet
             const reelHousingGeo = new THREE.BoxGeometry(18, 10, 6);
-            const reelHousing = new THREE.Mesh(reelHousingGeo, chromeMat);
+            const reelHousing = new THREE.Mesh(reelHousingGeo, cabinetMat);
             reelHousing.position.set(0, 1.5, -1);
             reelHousing.castShadow = true;
             reelHousing.receiveShadow = true;
             machineGroup.add(reelHousing);
 
-            // Inner reel cavity (darker, recessed area)
+            // Inner reel cavity (dark recessed area behind glass)
             const reelCavityGeo = new THREE.BoxGeometry(15, 8, 4);
             const reelCavityMat = new THREE.MeshStandardMaterial({
-                color: 0x222222,
-                metalness: 0.3,
-                roughness: 0.8
+                color: 0x1a1a1a,
+                metalness: 0.2,
+                roughness: 0.9
             });
             const reelCavity = new THREE.Mesh(reelCavityGeo, reelCavityMat);
             reelCavity.position.set(0, 1.5, 0);
@@ -524,30 +541,30 @@
 
             // Chrome frame around reel window
             const frameThickness = 1.2;
-            const frameTop = new THREE.Mesh(new THREE.BoxGeometry(17, frameThickness, 2), chromeMat);
+            const frameTop = new THREE.Mesh(new THREE.BoxGeometry(17, frameThickness, 2), chromeTrimMat);
             frameTop.position.set(0, 6, 2);
             machineGroup.add(frameTop);
 
-            const frameBottom = new THREE.Mesh(new THREE.BoxGeometry(17, frameThickness, 2), chromeMat);
+            const frameBottom = new THREE.Mesh(new THREE.BoxGeometry(17, frameThickness, 2), chromeTrimMat);
             frameBottom.position.set(0, -3, 2);
             machineGroup.add(frameBottom);
 
-            const frameLeft = new THREE.Mesh(new THREE.BoxGeometry(frameThickness, 10.4, 2), chromeMat);
+            const frameLeft = new THREE.Mesh(new THREE.BoxGeometry(frameThickness, 10.4, 2), chromeTrimMat);
             frameLeft.position.set(-8.4, 1.5, 2);
             machineGroup.add(frameLeft);
 
-            const frameRight = new THREE.Mesh(new THREE.BoxGeometry(frameThickness, 10.4, 2), chromeMat);
+            const frameRight = new THREE.Mesh(new THREE.BoxGeometry(frameThickness, 10.4, 2), chromeTrimMat);
             frameRight.position.set(8.4, 1.5, 2);
             machineGroup.add(frameRight);
 
-            // Gold accent strips
-            const goldStripTop = new THREE.Mesh(new THREE.BoxGeometry(17.5, 0.3, 0.5), goldMat);
-            goldStripTop.position.set(0, 6.8, 2.8);
-            machineGroup.add(goldStripTop);
+            // Purple accent strips (matching Double Diamond theme)
+            const purpleStripTop = new THREE.Mesh(new THREE.BoxGeometry(17.5, 0.3, 0.5), purpleMat);
+            purpleStripTop.position.set(0, 6.8, 2.8);
+            machineGroup.add(purpleStripTop);
 
-            const goldStripBottom = new THREE.Mesh(new THREE.BoxGeometry(17.5, 0.3, 0.5), goldMat);
-            goldStripBottom.position.set(0, -3.8, 2.8);
-            machineGroup.add(goldStripBottom);
+            const purpleStripBottom = new THREE.Mesh(new THREE.BoxGeometry(17.5, 0.3, 0.5), purpleMat);
+            purpleStripBottom.position.set(0, -3.8, 2.8);
+            machineGroup.add(purpleStripBottom);
 
             // Glass Cover for reels
             const glassGeo = new THREE.BoxGeometry(15, 8, 0.3);
@@ -574,7 +591,7 @@
             machineGroup.add(line);
 
             // ===== BUTTON DECK (PROTRUDING SHELF) =====
-            // Main button deck
+            // Main button deck - dark like reference
             const deckGeo = new THREE.BoxGeometry(18, 3, 8);
             const deck = new THREE.Mesh(deckGeo, blackPlasticMat);
             deck.position.set(0, -5.5, 2);
@@ -582,7 +599,7 @@
             deck.receiveShadow = true;
             machineGroup.add(deck);
 
-            // Deck top surface (slightly angled look with a separate piece)
+            // Deck top surface with chrome finish
             const deckTopGeo = new THREE.BoxGeometry(17, 0.3, 7);
             const deckTop = new THREE.Mesh(deckTopGeo, darkChromeMat);
             deckTop.position.set(0, -4.1, 2.5);
@@ -590,63 +607,70 @@
 
             // Chrome trim on deck front
             const deckTrimGeo = new THREE.BoxGeometry(18.5, 0.5, 0.5);
-            const deckTrim = new THREE.Mesh(deckTrimGeo, chromeMat);
+            const deckTrim = new THREE.Mesh(deckTrimGeo, chromeTrimMat);
             deckTrim.position.set(0, -4, 6.3);
             machineGroup.add(deckTrim);
 
-            // Red accent strip on deck
-            const redStripGeo = new THREE.BoxGeometry(16, 0.4, 0.3);
-            const redStrip = new THREE.Mesh(redStripGeo, redMat);
-            redStrip.position.set(0, -5, 6);
-            machineGroup.add(redStrip);
+            // Button row on deck (like reference image)
+            for (let i = 0; i < 5; i++) {
+                const buttonGeo = new THREE.BoxGeometry(1.5, 0.6, 1.2);
+                const buttonMat = new THREE.MeshStandardMaterial({
+                    color: i === 2 ? 0xff0000 : 0xeeeeee, // Middle button is red (spin)
+                    metalness: 0.3,
+                    roughness: 0.5
+                });
+                const button = new THREE.Mesh(buttonGeo, buttonMat);
+                button.position.set(-4 + i * 2, -4.5, 5);
+                machineGroup.add(button);
+            }
 
             // ===== BELLY GLASS AREA =====
-            // Main belly area
+            // Main belly area - dark gray cabinet
             const bellyGeo = new THREE.BoxGeometry(18, 5, 4);
-            const belly = new THREE.Mesh(bellyGeo, chromeMat);
+            const belly = new THREE.Mesh(bellyGeo, cabinetMat);
             belly.position.set(0, -9.5, 1);
             belly.castShadow = true;
             machineGroup.add(belly);
 
-            // Backlit belly glass panel
+            // Backlit belly glass panel (purple-tinted like Double Diamond logo area)
             const bellyPanelGeo = new THREE.BoxGeometry(15, 3.5, 0.3);
             const bellyPanel = new THREE.Mesh(bellyPanelGeo, emissivePanelMat);
             bellyPanel.position.set(0, -9.5, 3.2);
             machineGroup.add(bellyPanel);
 
-            // Gold trim around belly panel
-            const bellyTrimTop = new THREE.Mesh(new THREE.BoxGeometry(16, 0.3, 0.4), goldMat);
+            // Chrome trim around belly panel
+            const bellyTrimTop = new THREE.Mesh(new THREE.BoxGeometry(16, 0.3, 0.4), chromeTrimMat);
             bellyTrimTop.position.set(0, -7.5, 3.3);
             machineGroup.add(bellyTrimTop);
 
-            const bellyTrimBottom = new THREE.Mesh(new THREE.BoxGeometry(16, 0.3, 0.4), goldMat);
+            const bellyTrimBottom = new THREE.Mesh(new THREE.BoxGeometry(16, 0.3, 0.4), chromeTrimMat);
             bellyTrimBottom.position.set(0, -11.5, 3.3);
             machineGroup.add(bellyTrimBottom);
 
             // ===== SIDE PANELS =====
-            // Left side panel
+            // Left side panel - dark gray cabinet
             const sidePanelGeo = new THREE.BoxGeometry(0.5, 22, 8);
-            const leftPanel = new THREE.Mesh(sidePanelGeo, chromeMat);
+            const leftPanel = new THREE.Mesh(sidePanelGeo, cabinetMat);
             leftPanel.position.set(-9.25, 1, 0);
             leftPanel.castShadow = true;
             machineGroup.add(leftPanel);
 
-            // Right side panel
-            const rightPanel = new THREE.Mesh(sidePanelGeo, chromeMat);
+            // Right side panel - dark gray cabinet
+            const rightPanel = new THREE.Mesh(sidePanelGeo, cabinetMat);
             rightPanel.position.set(9.25, 1, 0);
             rightPanel.castShadow = true;
             machineGroup.add(rightPanel);
 
-            // ===== LEVER (PULL HANDLE) =====
+            // ===== LEVER (PULL HANDLE - Black like Double Diamond reference) =====
             leverGroup = new THREE.Group();
             leverGroup.position.set(10.5, 2, 3);
             machineGroup.add(leverGroup);
 
-            // Lever base (mount)
+            // Lever base (chrome mount)
             const leverBaseMat = new THREE.MeshStandardMaterial({
-                color: 0x444444,
-                metalness: 0.8,
-                roughness: 0.3
+                color: 0xc0c0c0,
+                metalness: 0.9,
+                roughness: 0.2
             });
             const leverBaseGeo = new THREE.CylinderGeometry(0.8, 1, 1.5, 16);
             const leverBase = new THREE.Mesh(leverBaseGeo, leverBaseMat);
@@ -661,17 +685,15 @@
 
             // Lever arm (chrome shaft)
             const leverArmGeo = new THREE.CylinderGeometry(0.25, 0.3, 6, 12);
-            const leverArm = new THREE.Mesh(leverArmGeo, chromeMat);
+            const leverArm = new THREE.Mesh(leverArmGeo, chromeTrimMat);
             leverArm.position.set(0, 3, 0);
             leverArmGroup.add(leverArm);
 
-            // Lever handle (red ball)
+            // Lever handle (black ball like reference)
             const handleMat = new THREE.MeshStandardMaterial({
-                color: 0xff0000,
-                metalness: 0.3,
-                roughness: 0.4,
-                emissive: 0x330000,
-                emissiveIntensity: 0.2
+                color: 0x1a1a1a,
+                metalness: 0.2,
+                roughness: 0.5
             });
             const leverHandleGeo = new THREE.SphereGeometry(0.8, 16, 16);
             const leverHandle = new THREE.Mesh(leverHandleGeo, handleMat);
@@ -679,9 +701,9 @@
             leverHandle.castShadow = true;
             leverArmGroup.add(leverHandle);
 
-            // Gold ring on lever
+            // Chrome ring on lever
             const leverRingGeo = new THREE.TorusGeometry(0.5, 0.1, 8, 24);
-            const leverRing = new THREE.Mesh(leverRingGeo, goldMat);
+            const leverRing = new THREE.Mesh(leverRingGeo, chromeTrimMat);
             leverRing.position.set(0, 5, 0);
             leverRing.rotation.x = Math.PI / 2;
             leverArmGroup.add(leverRing);
@@ -765,32 +787,47 @@
             coinMesh.visible = false;
             scene.add(coinMesh);
 
-            // --- DECORATIVE LIGHTS (on sides) ---
-            // Left side light strip
-            for (let i = 0; i < 5; i++) {
-                const lightGeo = new THREE.SphereGeometry(0.3, 8, 8);
-                const baseColor = new THREE.Color(i % 2 === 0 ? 0xff0000 : 0xffff00);
+            // --- DECORATIVE LIGHTS (speaker grills like reference) ---
+            // Left side speaker grill area
+            const speakerGeo = new THREE.BoxGeometry(1.5, 3, 0.3);
+            const speakerMat = new THREE.MeshStandardMaterial({
+                color: 0x444444,
+                metalness: 0.6,
+                roughness: 0.4
+            });
+            const leftSpeaker = new THREE.Mesh(speakerGeo, speakerMat);
+            leftSpeaker.position.set(-8.5, 6.5, 2.8);
+            machineGroup.add(leftSpeaker);
+
+            const rightSpeaker = new THREE.Mesh(speakerGeo, speakerMat);
+            rightSpeaker.position.set(8.5, 6.5, 2.8);
+            machineGroup.add(rightSpeaker);
+
+            // Decorative corner lights (purple and white theme)
+            for (let i = 0; i < 4; i++) {
+                const lightGeo = new THREE.SphereGeometry(0.25, 8, 8);
+                const baseColor = new THREE.Color(i % 2 === 0 ? 0x9966cc : 0xffffff);
                 const lightMat = new THREE.MeshBasicMaterial({ 
                     color: baseColor.clone()
                 });
                 const decorLight = new THREE.Mesh(lightGeo, lightMat);
-                decorLight.position.set(-9, -6 + i * 4, 4);
+                decorLight.position.set(-9, -4 + i * 4, 4);
                 decorLight.userData.isDecorLight = true;
-                decorLight.userData.baseColor = baseColor; // Store as THREE.Color
+                decorLight.userData.baseColor = baseColor;
                 machineGroup.add(decorLight);
             }
             
-            // Right side light strip
-            for (let i = 0; i < 5; i++) {
-                const lightGeo = new THREE.SphereGeometry(0.3, 8, 8);
-                const baseColor = new THREE.Color(i % 2 === 0 ? 0xffff00 : 0xff0000);
+            // Right side decorative lights
+            for (let i = 0; i < 4; i++) {
+                const lightGeo = new THREE.SphereGeometry(0.25, 8, 8);
+                const baseColor = new THREE.Color(i % 2 === 0 ? 0xffffff : 0x9966cc);
                 const lightMat = new THREE.MeshBasicMaterial({ 
                     color: baseColor.clone()
                 });
                 const decorLight = new THREE.Mesh(lightGeo, lightMat);
-                decorLight.position.set(9, -6 + i * 4, 4);
+                decorLight.position.set(9, -4 + i * 4, 4);
                 decorLight.userData.isDecorLight = true;
-                decorLight.userData.baseColor = baseColor; // Store as THREE.Color
+                decorLight.userData.baseColor = baseColor;
                 machineGroup.add(decorLight);
             }
 
