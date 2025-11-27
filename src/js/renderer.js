@@ -201,6 +201,9 @@ export class Renderer {
         
         // Add some neon accent lights for arcade feel
         this.addNeonLights();
+        
+        // Add LED strip lighting
+        this.addLEDLighting();
     }
 
     /**
@@ -216,6 +219,119 @@ export class Renderer {
         const magentaLight = new THREE.PointLight(0xff00ff, 0.5, 15);
         magentaLight.position.set(6, 0, 2);
         this.scene.add(magentaLight);
+    }
+    
+    /**
+     * Add LED strip lighting around the board
+     */
+    addLEDLighting() {
+        this.ledLights = [];
+        
+        // Create LED strip lights around the board edges
+        const ledColors = [0x00f0ff, 0xff00ff, 0x00ff00, 0xffff00];
+        const positions = [
+            // Top edge LEDs
+            { x: -5, y: 9, z: 0.5 },
+            { x: -2.5, y: 9.5, z: 0.5 },
+            { x: 0, y: 9.5, z: 0.5 },
+            { x: 2.5, y: 9.5, z: 0.5 },
+            { x: 5, y: 9, z: 0.5 },
+            // Left edge LEDs
+            { x: -5.5, y: 5, z: 0.5 },
+            { x: -5.5, y: 0, z: 0.5 },
+            { x: -5.5, y: -5, z: 0.5 },
+            // Right edge LEDs
+            { x: 5.5, y: 5, z: 0.5 },
+            { x: 5.5, y: 0, z: 0.5 },
+            { x: 5.5, y: -5, z: 0.5 },
+            // Bottom edge LEDs
+            { x: -3, y: -8, z: 0.5 },
+            { x: 0, y: -8, z: 0.5 },
+            { x: 3, y: -8, z: 0.5 }
+        ];
+        
+        positions.forEach((pos, index) => {
+            const color = ledColors[index % ledColors.length];
+            const light = new THREE.PointLight(color, 0.3, 4);
+            light.position.set(pos.x, pos.y, pos.z);
+            this.scene.add(light);
+            
+            // Store for animation
+            this.ledLights.push({
+                light,
+                baseIntensity: 0.3,
+                color,
+                phase: Math.random() * Math.PI * 2
+            });
+            
+            // Add visual LED mesh (small glowing sphere)
+            const ledGeometry = new THREE.SphereGeometry(0.08, 8, 8);
+            const ledMaterial = new THREE.MeshBasicMaterial({
+                color: color,
+                transparent: true,
+                opacity: 0.8
+            });
+            const ledMesh = new THREE.Mesh(ledGeometry, ledMaterial);
+            ledMesh.position.set(pos.x, pos.y, pos.z);
+            this.scene.add(ledMesh);
+            this.ledLights[this.ledLights.length - 1].mesh = ledMesh;
+        });
+        
+        // Start LED animation
+        this.animateLEDs();
+    }
+    
+    /**
+     * Animate LED lights (pulsing effect)
+     */
+    animateLEDs() {
+        const animate = () => {
+            const time = performance.now() * 0.002;
+            
+            this.ledLights.forEach((led, index) => {
+                // Create wave pattern along the LEDs
+                const wave = Math.sin(time + led.phase + index * 0.3) * 0.5 + 0.5;
+                led.light.intensity = led.baseIntensity * (0.5 + wave * 0.8);
+                
+                if (led.mesh) {
+                    led.mesh.material.opacity = 0.5 + wave * 0.5;
+                }
+            });
+            
+            requestAnimationFrame(animate);
+        };
+        animate();
+    }
+    
+    /**
+     * Flash a specific LED color (called when peg is hit)
+     */
+    flashLED(x, y, color = 0xffffff) {
+        // Find nearest LED and flash it
+        let nearestLED = null;
+        let nearestDist = Infinity;
+        
+        this.ledLights.forEach(led => {
+            const dist = Math.sqrt(
+                Math.pow(led.light.position.x - x, 2) + 
+                Math.pow(led.light.position.y - y, 2)
+            );
+            if (dist < nearestDist) {
+                nearestDist = dist;
+                nearestLED = led;
+            }
+        });
+        
+        if (nearestLED && nearestDist < 3) {
+            const originalIntensity = nearestLED.light.intensity;
+            nearestLED.light.intensity = 2.0;
+            nearestLED.light.color.setHex(color);
+            
+            setTimeout(() => {
+                nearestLED.light.intensity = originalIntensity;
+                nearestLED.light.color.setHex(nearestLED.color);
+            }, 100);
+        }
     }
 
     /**

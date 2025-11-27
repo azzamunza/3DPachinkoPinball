@@ -28,25 +28,239 @@ export class JackpotMachine {
      * Create jackpot machine visuals
      */
     create() {
-        // Machine is primarily a UI overlay, but we add a 3D representation
+        // Generate reel icon textures
+        this.generateReelIcons();
+        
+        // Create 3D machine with spinning reels
         this.createMachineVisual();
         
-        console.log('Jackpot machine created');
+        // Initialize idle reel spinning
+        this.startIdleSpinning();
+        
+        console.log('Jackpot machine created with spinning reels');
+    }
+    
+    /**
+     * Generate reel icon textures procedurally
+     */
+    generateReelIcons() {
+        this.reelTextures = {};
+        const iconSize = 128;
+        
+        // Define icons to generate
+        const icons = {
+            '1x': { text: '1×', bgColor: '#2196F3', textColor: '#fff' },
+            '2x': { text: '2×', bgColor: '#4CAF50', textColor: '#fff' },
+            '3x': { text: '3×', bgColor: '#FF9800', textColor: '#fff' },
+            '4x': { text: '4×', bgColor: '#9C27B0', textColor: '#fff' },
+            '5x': { text: '5×', bgColor: '#F44336', textColor: '#fff' },
+            'BONUS': { text: '🎁', bgColor: '#E91E63', textColor: '#fff', emoji: true },
+            'FREE': { text: '🎯', bgColor: '#00BCD4', textColor: '#fff', emoji: true },
+            'WILD': { text: '⭐', bgColor: '#FFD700', textColor: '#333', emoji: true },
+            'JACKPOT': { text: '💎', bgColor: '#6200EA', textColor: '#fff', emoji: true },
+            'SPECIAL': { text: '🌟', bgColor: '#FF5722', textColor: '#fff', emoji: true }
+        };
+        
+        Object.entries(icons).forEach(([key, config]) => {
+            const canvas = document.createElement('canvas');
+            canvas.width = iconSize;
+            canvas.height = iconSize;
+            const ctx = canvas.getContext('2d');
+            
+            // Background with gradient
+            const gradient = ctx.createRadialGradient(iconSize/2, iconSize/2, 0, iconSize/2, iconSize/2, iconSize/2);
+            gradient.addColorStop(0, config.bgColor);
+            gradient.addColorStop(1, this.darkenColor(config.bgColor, 30));
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, iconSize, iconSize);
+            
+            // Add border
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 4;
+            ctx.strokeRect(4, 4, iconSize - 8, iconSize - 8);
+            
+            // Draw icon/text
+            ctx.fillStyle = config.textColor;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            if (config.emoji) {
+                ctx.font = 'bold 64px Arial';
+            } else {
+                ctx.font = 'bold 48px Orbitron, Arial';
+            }
+            ctx.fillText(config.text, iconSize / 2, iconSize / 2);
+            
+            // Add shine effect
+            ctx.fillStyle = 'rgba(255,255,255,0.2)';
+            ctx.beginPath();
+            ctx.ellipse(iconSize/2, iconSize/3, iconSize/2.5, iconSize/4, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Create Three.js texture
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.needsUpdate = true;
+            this.reelTextures[key] = texture;
+        });
+    }
+    
+    /**
+     * Darken a hex color
+     */
+    darkenColor(hex, percent) {
+        const num = parseInt(hex.replace('#', ''), 16);
+        const amt = Math.round(2.55 * percent);
+        const R = Math.max(0, (num >> 16) - amt);
+        const G = Math.max(0, (num >> 8 & 0x00FF) - amt);
+        const B = Math.max(0, (num & 0x0000FF) - amt);
+        return `#${(R << 16 | G << 8 | B).toString(16).padStart(6, '0')}`;
     }
 
     /**
-     * Create 3D machine visual (visible on playfield)
+     * Create 3D machine visual with spinning reels (visible on playfield)
      */
     createMachineVisual() {
         const group = new THREE.Group();
-        group.position.set(0, -5, 0);
+        group.position.set(0, -5, 0.5);
         
-        // Machine body
-        const bodyGeometry = new THREE.BoxGeometry(3, 2, 1);
-        const bodyMaterial = this.game.renderer.createMaterial(CONFIG.MATERIALS.JACKPOT_MACHINE);
+        // Machine cabinet body
+        const bodyGeometry = new THREE.BoxGeometry(4, 2.8, 1.2);
+        const bodyMaterial = new THREE.MeshStandardMaterial({
+            color: 0x8B0000,
+            metalness: 0.7,
+            roughness: 0.3
+        });
         const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
         body.castShadow = true;
         group.add(body);
+        
+        // Gold trim around the cabinet
+        const trimGeometry = new THREE.BoxGeometry(4.1, 2.9, 0.05);
+        const trimMaterial = new THREE.MeshStandardMaterial({
+            color: 0xFFD700,
+            metalness: 0.9,
+            roughness: 0.1
+        });
+        const trim = new THREE.Mesh(trimGeometry, trimMaterial);
+        trim.position.z = 0.6;
+        group.add(trim);
+        
+        // Create the reels display area (black background)
+        const displayBg = new THREE.Mesh(
+            new THREE.PlaneGeometry(3.2, 1.2),
+            new THREE.MeshBasicMaterial({ color: 0x111111 })
+        );
+        displayBg.position.set(0, 0.2, 0.61);
+        group.add(displayBg);
+        
+        // Create 3 spinning reels
+        this.reel3DObjects = [];
+        const reelWidth = 0.9;
+        const reelSpacing = 1.0;
+        
+        for (let i = 0; i < 3; i++) {
+            const reelGroup = new THREE.Group();
+            reelGroup.position.set(-reelSpacing + i * reelSpacing, 0.2, 0.65);
+            
+            // Reel cylinder
+            const reelGeometry = new THREE.CylinderGeometry(0.4, 0.4, reelWidth, 16, 1, true);
+            
+            // Create a material array for the cylinder sides (the icons)
+            const symbols = CONFIG.JACKPOT.SYMBOLS;
+            const numSymbols = symbols.length;
+            
+            // Create texture strip with all symbols
+            const stripCanvas = document.createElement('canvas');
+            stripCanvas.width = 128 * numSymbols;
+            stripCanvas.height = 128;
+            const stripCtx = stripCanvas.getContext('2d');
+            
+            symbols.forEach((symbol, idx) => {
+                if (this.reelTextures[symbol]) {
+                    // Draw texture from stored canvas (re-create for strip)
+                    this.drawSymbolToStrip(stripCtx, symbol, idx * 128, 0, 128, 128);
+                }
+            });
+            
+            const stripTexture = new THREE.CanvasTexture(stripCanvas);
+            stripTexture.wrapS = THREE.RepeatWrapping;
+            stripTexture.repeat.set(1, 1);
+            
+            const reelMaterial = new THREE.MeshStandardMaterial({
+                map: stripTexture,
+                side: THREE.DoubleSide,
+                metalness: 0.2,
+                roughness: 0.5
+            });
+            
+            const reel = new THREE.Mesh(reelGeometry, reelMaterial);
+            reel.rotation.z = Math.PI / 2;
+            reelGroup.add(reel);
+            
+            // Side caps (gold)
+            const capGeometry = new THREE.CircleGeometry(0.4, 16);
+            const capMaterial = new THREE.MeshStandardMaterial({
+                color: 0xFFD700,
+                metalness: 0.8,
+                roughness: 0.2
+            });
+            
+            const leftCap = new THREE.Mesh(capGeometry, capMaterial);
+            leftCap.position.x = -reelWidth / 2;
+            leftCap.rotation.y = Math.PI / 2;
+            reelGroup.add(leftCap);
+            
+            const rightCap = new THREE.Mesh(capGeometry.clone(), capMaterial);
+            rightCap.position.x = reelWidth / 2;
+            rightCap.rotation.y = -Math.PI / 2;
+            reelGroup.add(rightCap);
+            
+            group.add(reelGroup);
+            this.reel3DObjects.push({
+                group: reelGroup,
+                reel,
+                rotation: Math.random() * Math.PI * 2,
+                spinSpeed: 0,
+                targetRotation: 0,
+                isSpinning: false
+            });
+        }
+        
+        // Add "JACKPOT" text sign on top
+        const signGeometry = new THREE.PlaneGeometry(3.5, 0.5);
+        const signCanvas = this.createJackpotSign();
+        const signTexture = new THREE.CanvasTexture(signCanvas);
+        const signMaterial = new THREE.MeshBasicMaterial({
+            map: signTexture,
+            transparent: true
+        });
+        const sign = new THREE.Mesh(signGeometry, signMaterial);
+        sign.position.set(0, 1.2, 0.61);
+        group.add(sign);
+        this.jackpotSign = sign;
+        
+        // Add flashing lights on top
+        this.cabinetLights = [];
+        const lightPositions = [
+            { x: -1.8, y: 1.3 },
+            { x: -1.2, y: 1.4 },
+            { x: -0.6, y: 1.45 },
+            { x: 0, y: 1.5 },
+            { x: 0.6, y: 1.45 },
+            { x: 1.2, y: 1.4 },
+            { x: 1.8, y: 1.3 }
+        ];
+        
+        lightPositions.forEach((pos, i) => {
+            const lightGeo = new THREE.SphereGeometry(0.08, 8, 8);
+            const lightMat = new THREE.MeshBasicMaterial({
+                color: i % 2 === 0 ? 0xff0000 : 0xffff00
+            });
+            const light = new THREE.Mesh(lightGeo, lightMat);
+            light.position.set(pos.x, pos.y, 0.62);
+            group.add(light);
+            this.cabinetLights.push({ mesh: light, phase: i * 0.5 });
+        });
         
         // Neon frame
         const frameGeometry = new THREE.EdgesGeometry(bodyGeometry);
@@ -57,30 +271,135 @@ export class JackpotMachine {
         const frame = new THREE.LineSegments(frameGeometry, frameMaterial);
         group.add(frame);
         
-        // Add glow effect
-        const glowGeometry = new THREE.BoxGeometry(3.1, 2.1, 0.1);
-        const glowMaterial = new THREE.MeshBasicMaterial({
-            color: 0xff00ff,
-            transparent: true,
-            opacity: 0.3
-        });
-        const glow = new THREE.Mesh(glowGeometry, glowMaterial);
-        glow.position.z = 0.5;
-        group.add(glow);
+        // Handle/lever on the side
+        const handleGroup = new THREE.Group();
+        handleGroup.position.set(2.2, 0, 0);
         
-        // "JACKPOT" text placeholder (using simple geometry)
-        const textGeometry = new THREE.PlaneGeometry(2, 0.3);
-        const textMaterial = new THREE.MeshBasicMaterial({
-            color: 0xffff00,
-            transparent: true,
-            opacity: 0.8
-        });
-        const text = new THREE.Mesh(textGeometry, textMaterial);
-        text.position.set(0, 0.7, 0.51);
-        group.add(text);
+        const handleBase = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.1, 0.1, 0.8, 8),
+            new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.8 })
+        );
+        handleBase.rotation.z = Math.PI / 2;
+        handleGroup.add(handleBase);
+        
+        const handleBall = new THREE.Mesh(
+            new THREE.SphereGeometry(0.15, 16, 16),
+            new THREE.MeshStandardMaterial({ color: 0xff0000, metalness: 0.6 })
+        );
+        handleBall.position.x = 0.4;
+        handleGroup.add(handleBall);
+        
+        group.add(handleGroup);
+        this.leverHandle = handleGroup;
         
         this.machine = group;
         this.game.renderer.add(group);
+    }
+    
+    /**
+     * Draw a symbol to a canvas strip
+     */
+    drawSymbolToStrip(ctx, symbol, x, y, width, height) {
+        const config = {
+            '1x': { text: '1×', bgColor: '#2196F3', textColor: '#fff' },
+            '2x': { text: '2×', bgColor: '#4CAF50', textColor: '#fff' },
+            '3x': { text: '3×', bgColor: '#FF9800', textColor: '#fff' },
+            '4x': { text: '4×', bgColor: '#9C27B0', textColor: '#fff' },
+            '5x': { text: '5×', bgColor: '#F44336', textColor: '#fff' },
+            'BONUS': { text: '🎁', bgColor: '#E91E63', textColor: '#fff', emoji: true },
+            'FREE': { text: '🎯', bgColor: '#00BCD4', textColor: '#fff', emoji: true },
+            'WILD': { text: '⭐', bgColor: '#FFD700', textColor: '#333', emoji: true },
+            'JACKPOT': { text: '💎', bgColor: '#6200EA', textColor: '#fff', emoji: true },
+            'SPECIAL': { text: '🌟', bgColor: '#FF5722', textColor: '#fff', emoji: true }
+        }[symbol] || { text: '?', bgColor: '#666', textColor: '#fff' };
+        
+        // Background
+        ctx.fillStyle = config.bgColor;
+        ctx.fillRect(x, y, width, height);
+        
+        // Border
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x + 2, y + 2, width - 4, height - 4);
+        
+        // Text
+        ctx.fillStyle = config.textColor;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.font = config.emoji ? 'bold 48px Arial' : 'bold 36px Arial';
+        ctx.fillText(config.text, x + width / 2, y + height / 2);
+    }
+    
+    /**
+     * Create JACKPOT text sign
+     */
+    createJackpotSign() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 512;
+        canvas.height = 80;
+        const ctx = canvas.getContext('2d');
+        
+        // Gradient background
+        const gradient = ctx.createLinearGradient(0, 0, 512, 0);
+        gradient.addColorStop(0, '#FFD700');
+        gradient.addColorStop(0.5, '#FFA500');
+        gradient.addColorStop(1, '#FFD700');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 512, 80);
+        
+        // Border
+        ctx.strokeStyle = '#8B0000';
+        ctx.lineWidth = 6;
+        ctx.strokeRect(3, 3, 506, 74);
+        
+        // Text
+        ctx.fillStyle = '#8B0000';
+        ctx.font = 'bold 50px Orbitron, Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('JACKPOT', 256, 42);
+        
+        // Add outline
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 1;
+        ctx.strokeText('JACKPOT', 256, 42);
+        
+        return canvas;
+    }
+    
+    /**
+     * Start idle spinning (when not actively playing)
+     */
+    startIdleSpinning() {
+        this.idleSpinning = true;
+        this.animateIdleReels();
+    }
+    
+    /**
+     * Animate idle reel spinning
+     */
+    animateIdleReels() {
+        if (!this.idleSpinning || this.isSpinning) return;
+        
+        const animate = () => {
+            if (!this.idleSpinning || this.isSpinning) return;
+            
+            // Slowly rotate each reel
+            this.reel3DObjects.forEach((reel, i) => {
+                reel.rotation += 0.02 + i * 0.005;
+                reel.reel.rotation.x = reel.rotation;
+            });
+            
+            // Animate cabinet lights
+            const time = performance.now() * 0.003;
+            this.cabinetLights.forEach((light, i) => {
+                const brightness = Math.sin(time + light.phase) * 0.5 + 0.5;
+                light.mesh.material.opacity = brightness;
+            });
+            
+            requestAnimationFrame(animate);
+        };
+        animate();
     }
 
     /**

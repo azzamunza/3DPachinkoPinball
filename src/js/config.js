@@ -144,7 +144,8 @@ export const CONFIG = {
         POWER: {
             MIN: 0,
             MAX: 100,
-            CHARGE_TIME: 2.0 // seconds to full charge
+            CHARGE_TIME: 2.0, // seconds to full charge
+            MULTIPLIER: 1.0 // Power multiplier for testing (user adjustable, unlimited)
         },
         ROTATION: {
             MIN: -45 * (Math.PI / 180),
