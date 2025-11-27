@@ -2,7 +2,7 @@
 
 ## 1. ROLE/PERSONA
 
-Act as a Senior Software Engineer specialising in high-performance browser-based 3D game development with expertise in WebGPU architecture, real-time physics simulation, GPU-driven rendering optimization, and cross-platform mobile/desktop game implementation. Your expertise must focus on robust, production-grade code generation, technical accuracy, physics fidelity, and meeting strict performance constraints for contemporary GPU-accelerated environments.
+Act as a Senior Software Engineer specialising in high-performance browser-based 3D game development with expertise in WebGPU architecture, real-time physics simulation, GPU-driven rendering optimisation, and complex state management.
 
 ---
 
@@ -68,7 +68,7 @@ The objective is to create an advanced web-based arcade simulation demonstrating
 ## 5. PHYSICAL DYNAMICS SYSTEM
 
 ### Gravity & Ball Behaviour:
-- **Gravity constant:** -9.81 m/s² (1x Earth gravity—normalized to game units)
+- **Gravity constant:** -9.81 m/s² (1x Earth gravity—normalised to game units)
 - **Playfield tilt:** Surface inclined at 6.5° from vertical (slight slow-down effect on rolling balls)
 - **Ball properties:**
   - Material: Steel spheres (simulated)
@@ -166,7 +166,7 @@ Based on traditional Pachinko machines and Pinball arcade designs, this board fe
 - **Funnel behaviour:**
   - Ball enters funnel → rolls down interior cone → deposits into jackpot machine input chute
   - Funnel applies 0.3 friction coefficient (guides smoothly, no abrupt stops)
-  - No ball can escape the funnel once entered
+  - **Physics Compliance:** Balls interacting with the funnel must adhere strictly to the physics engine's simulation. There must be no script-forcing the ball into the chute. If a ball enters with high velocity, it must be possible for it to swirl out or bounce out of the funnel based on standard rigid body dynamics.
 - **Ball capture requirement:** 10 balls must accumulate in the jackpot input chute before the machine activates
 - **Visual feedback:** Balls visible rolling down funnel (transparent cone rendering)
 
@@ -180,7 +180,7 @@ Based on traditional Pachinko machines and Pinball arcade designs, this board fe
 ## 7. MORTAR CANNON SYSTEM
 
 ### Cannon Positioning:
-- **Location:** Top-center of playfield
+- **Location:** Top-centre of playfield
 - **Orientation:** Vertical axis (can rotate horizontally left/right); vertical angle adjustment (upward/downward tilt)
 - **Fire zone:** Launches balls into the top-circular distribution area
 
@@ -326,7 +326,7 @@ State: RESET
 | **Function** | **Primary Input** | **Secondary Input** | **Tertiary Input** |
 |---|---|---|---|
 | **Cannon Power (Charge)** | Mouse Wheel Up/Down | Keyboard W/S | Click + Drag vertically |
-| **Cannon Rotation (L/R)** | Mouse X-position (relative to canvas center) | Keyboard A/D | Click + Drag horizontally |
+| **Cannon Rotation (L/R)** | Mouse X-position (relative to canvas centre) | Keyboard A/D | Click + Drag horizontally |
 | **Cannon Angle (Elevation)** | Mouse Y-position (relative to cannon) | Keyboard ↑/↓ | Scroll wheel (alt) |
 | **Fire Cannon** | Left-Click | Spacebar | Enter Key |
 | **Left Flipper** | Z Key | Left Mouse Button (held) | Q Key |
@@ -340,7 +340,7 @@ State: RESET
 | **Cannon Power** | Vertical swipe (upward = charge, downward = fire) | Drag vertical slider on left edge |
 | **Cannon Rotation** | Horizontal swipe (left/right bias) | Drag dial widget beneath cannon |
 | **Cannon Angle** | Two-finger vertical pinch (spread = up-angle, pinch = down-angle) | Tilt device (gyro—optional) |
-| **Fire Cannon** | Tap button (center bottom) OR release swipe | Double-tap anywhere |
+| **Fire Cannon** | Tap button (centre bottom) OR release swipe | Double-tap anywhere |
 | **Left Flipper** | Tap left side of screen (hold for sustained activation) | Slide UP on left edge |
 | **Right Flipper** | Tap right side of screen (hold for sustained activation) | Slide UP on right edge |
 | **Jackpot Handle** | Slide DOWN on right edge of canvas (jackpot handle metaphor) | UI Button |
@@ -458,16 +458,16 @@ onFrameComplete(frameTimeMs) {
   - Position: (-8, 20, 12) (raking angle from upper-left-back)
   - Direction: Normalized(-8, -20, -12)
   - Intensity: 1.5
-  - Color: RGB(1.0, 0.95, 0.85) (warm white, slight yellow arcade tint)
+  - Colour: RGB(1.0, 0.95, 0.85) (warm white, slight yellow arcade tint)
 
 - **Fill Light (Secondary):**
   - Position: (10, 8, -8)
   - Intensity: 0.5
-  - Color: RGB(0.8, 0.9, 1.0) (cool blue accent)
+  - Colour: RGB(0.8, 0.9, 1.0) (cool blue accent)
 
 - **Ambient Light:**
   - Intensity: 0.25
-  - Color: RGB(0.3, 0.3, 0.35) (dark blue-tinted, no pure black)
+  - Colour: RGB(0.3, 0.3, 0.35) (dark blue-tinted, no pure black)
 
 #### Shadow Mapping:
 - **Shadow map resolution:** 2048×2048 (primary directional light only)
@@ -511,14 +511,13 @@ onFrameComplete(frameTimeMs) {
 
 #### Procedural Texture Generation (No External Assets):
 All textures generated procedurally via fragment shaders or canvas 2D:
-
 1. **Pegs:** Cylinder with circular highlights (specular reflection)
 2. **Bumpers:** Dome with rim lighting + edge glow
 3. **Ramps:** Striped texture (alternating dark/light bands for depth perception)
 4. **Walls:** Wood-grain pattern (Perlin noise simulation)
 5. **Balls:** Sphere with sun-position-relative specular highlight
 6. **Reels (Jackpot):** Symbol sprites rendered as canvas 2D, then uploaded as WebGPU texture
-7. **Floor/Surface:** Checkered pattern with metallic sheen (arcade aesthetic)
+7. **Floor/Surface:** Chequered pattern with metallic sheen (arcade aesthetic)
 
 #### Post-Processing Effects (Performance-Conscious):
 - **Bloom:** Applied to emissive surfaces only (bumpers hit state, neon trim)
@@ -530,7 +529,7 @@ All textures generated procedurally via fragment shaders or canvas 2D:
   - Prevents blown-out highlights
   - Preserves arcade colour vibrancy
 
-- **Color Grading:** 3D LUT (Look-Up Table) texture
+- **Colour Grading:** 3D LUT (Look-Up Table) texture
   - Arcade-warm colour grade (slightly boosted reds/yellows)
   - LUT resolution: 16×16×16 (minimal memory overhead)
 
@@ -598,7 +597,7 @@ FPS Monitoring Loop:
 
 ### Initial Ball Inventory:
 - **Starting ball count:** 2,000 balls
-- **Rationale:** Based on real Pachinko arcade sessions, players typically receive 1,500-3,000 balls per play session. 2,000 represents mid-range engagement (~15-30 minute session at constant fire rate)
+- **Rationale:** Based on real Pachinko arcade sessions, players typically receive 1,500-3,000 balls per play session. 2,000 represents mid-range engagement (~15-30 minute session at constant fir[...]
 
 ### Ball Depletion Rules:
 - **Ball loss:** -1 ball per drain event (left/right drain zones at bottom of playfield)
@@ -762,7 +761,7 @@ const jackpotWin = jsfxr([2,0.5,,0.4,0.5,,0.4,0.8,,0.1,0.1,0.3,0.1,0.5]);
 - **Disabled appearance:** Greyed-out, non-interactive until 10 balls in chute
 
 #### Jackpot Ball Count Display (if activated):
-- **Position:** Lower-center, below dial
+- **Position:** Lower-centre, below dial
 - **Display:** "JACKPOT: 8/10 BALLS" (progress bar)
 - **Auto-hide:** Disappears when game is in normal play (show only when jackpot chute has balls)
 
@@ -787,7 +786,7 @@ const jackpotWin = jsfxr([2,0.5,,0.4,0.5,,0.4,0.8,,0.1,0.1,0.3,0.1,0.5]);
 
 ---
 
-## 18. PERFORMANCE OPTIMIZATION STRATEGIES
+## 18. PERFORMANCE OPTIMISATION STRATEGIES
 
 ### WebGPU-Specific Optimisations:
 1. **Compute shaders for physics pre-culling:** Pre-calculate collision candidates on GPU before CPU broad-phase
@@ -815,7 +814,7 @@ const jackpotWin = jsfxr([2,0.5,,0.4,0.5,,0.4,0.8,,0.1,0.1,0.3,0.1,0.5]);
 ## 19. RENDERING FALLBACK STRATEGY
 
 ### Fallback Chain:
-1. **Attempt WebGPU initialization** (Chrome 120+, Edge 120+, Firefox 130+)
+1. **Attempt WebGPU initialisation** (Chrome 120+, Edge 120+, Firefox 130+)
    - If successful: Use a full WebGPU pipeline
    - If unavailable or error: Log warning, proceed to fallback
 
@@ -832,14 +831,14 @@ const jackpotWin = jsfxr([2,0.5,,0.4,0.5,,0.4,0.8,,0.1,0.1,0.3,0.1,0.5]);
 
 ### Feature Detection Code Pattern:
 ```javascript
-async function initializeGraphics() {
+async function initialiseGraphics() {
   if (navigator.gpu) {
     try {
       adapter = await navigator.gpu.requestAdapter();
       device = await adapter.requestDevice();
       return 'WebGPU';
     } catch (e) {
-      console.warn('WebGPU initialization failed:', e);
+      console.warn('WebGPU initialisation failed:', e);
     }
   }
   
@@ -900,7 +899,7 @@ The response must contain the complete, fully functional, production-ready sourc
    - No external dependencies in `<head>` except CDN-hosted libraries
 
 2. **JavaScript Game Engine** (complete inline in `<script>`)
-   - **Graphics System:** WebGPU initialization + WebGL 2.0 fallback
+   - **Graphics System:** WebGPU initialisation + WebGL 2.0 fallback
    - **Three.js integration:** R128+ WebGL 2.0 renderer (if fallback needed)
    - **Physics Engine:** Rapier3D WASM + Cannon-es fallback
    - **Game Loop:** Main render/update cycle with requestAnimationFrame
@@ -1061,7 +1060,7 @@ The generated code is successful if it demonstrates:
 - Pin spacing typically 12-20mm; adapted here to ~1.2 game units
 
 ### Pinball Mechanics Integration:
-- Modern pinball machines incorporate pop-bumpers (which generate additional points upon contact), ramps (inclined sections that guide balls to upper playfield areas), and targets (stationary objects that trigger bonus scoring when struck)
+- Modern pinball machines incorporate pop-bumpers (which generate additional points upon contact), ramps (inclined sections that guide balls to upper playfield areas), and targets (stationary objects [...]
 - Flippers are standard (2x flippers at ~120° angle); adapted here to simultaneous dual-activation
 - Ramp designs in premium pinball include loop ramps, orbit shots, and multi-stage ramps that award increasing points for completion sequences
 
