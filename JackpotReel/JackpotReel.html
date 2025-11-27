@@ -10,6 +10,9 @@
             margin: 0;
             overflow: hidden;
             background-color: #050505;
+            background-image: url('../references/heiwa-pachinko-world-64-nintendo-64-videogame-editorial-use-only-2BXTJM3.jpg');
+            background-size: cover;
+            background-position: center;
             font-family: 'Courier New', Courier, monospace;
             user-select: none;
         }
@@ -229,7 +232,7 @@
                 // the symbols appear upright to the camera.
                 ctx.save();
                 ctx.translate(cx, cy);
-                ctx.rotate(-Math.PI / 2); // Rotate -90 degrees
+                ctx.rotate(Math.PI / 2); // Rotate 90 degrees
 
                 // Draw Symbol Graphics (Now drawing relative to center 0,0)
                 ctx.fillStyle = SYMBOL_COLORS[symbol];
@@ -382,10 +385,12 @@
             scene.add(neonRight);
 
             // --- MATERIALS ---
+            const cabinetTexture = new THREE.TextureLoader().load('../references/pachinko2.jpg');
             const cabinetMat = new THREE.MeshStandardMaterial({
                 color: 0x111111,
                 metalness: 0.6,
-                roughness: 0.4
+                roughness: 0.4,
+                map: cabinetTexture
             });
 
             const goldMat = new THREE.MeshStandardMaterial({
