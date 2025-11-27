@@ -212,7 +212,7 @@ export class Cannon {
 
     /**
      * Calculate launch velocity based on power and orientation
-     * Now shoots UPWARD from bottom of playfield
+     * Shoots UPWARD and INTO the tilted playfield (toward the back of the board)
      */
     calculateLaunchVelocity(power) {
         // Apply power multiplier from config (for testing)
@@ -223,10 +223,11 @@ export class Cannon {
         const rotationAngle = this.rotation * CONFIG.CANNON.ROTATION.MAX;
         const elevationAngle = this.elevation * CONFIG.CANNON.ELEVATION.MAX;
         
-        // Velocity components - shooting UPWARD (positive Y)
+        // Velocity components - shooting UPWARD (positive Y) and INTO the board (negative Z)
         const vx = Math.sin(rotationAngle) * baseSpeed * 0.2; // Slight horizontal bias
         const vy = baseSpeed; // UPWARD (positive, into playfield top)
-        const vz = Math.sin(elevationAngle) * baseSpeed * 0.1;
+        // Aim toward the back of the board (negative Z) with elevation adjustment
+        const vz = -baseSpeed * 0.15 + Math.sin(elevationAngle) * baseSpeed * 0.1;
         
         // Add slight randomness based on GPU noise
         const noise = this.game.getGPUNoiseRNG();
