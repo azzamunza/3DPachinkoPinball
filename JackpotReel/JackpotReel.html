@@ -486,7 +486,9 @@
             machineGroup.add(topBox);
 
             // Rounded arch top (half cylinder for dome effect)
-            const archGeo = new THREE.CylinderGeometry(9, 9, 5, 32, 1, false, 0, Math.PI);
+            const cabinetWidth = 18;
+            const archRadius = cabinetWidth / 2;
+            const archGeo = new THREE.CylinderGeometry(archRadius, archRadius, 5, 32, 1, false, 0, Math.PI);
             const arch = new THREE.Mesh(archGeo, cabinetMat);
             arch.rotation.x = Math.PI / 2;
             arch.rotation.z = Math.PI;
@@ -612,7 +614,10 @@
             machineGroup.add(deckTrim);
 
             // Button row on deck (like reference image)
-            for (let i = 0; i < 5; i++) {
+            const buttonCount = 5;
+            const buttonSpacing = 2;
+            const buttonRowStart = -4;
+            for (let i = 0; i < buttonCount; i++) {
                 const buttonGeo = new THREE.BoxGeometry(1.5, 0.6, 1.2);
                 const buttonMat = new THREE.MeshStandardMaterial({
                     color: i === 2 ? 0xff0000 : 0xeeeeee, // Middle button is red (spin)
@@ -620,7 +625,7 @@
                     roughness: 0.5
                 });
                 const button = new THREE.Mesh(buttonGeo, buttonMat);
-                button.position.set(-4 + i * 2, -4.5, 5);
+                button.position.set(buttonRowStart + i * buttonSpacing, -4.5, 5);
                 machineGroup.add(button);
             }
 
