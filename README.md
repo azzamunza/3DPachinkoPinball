@@ -1,5 +1,5 @@
 # 3D Hybrid Pachinko/Pinball Simulation
-
+Demo: (https://azzamunza.github.io/3DPachinkoPinball/src/)
 A high-performance browser-based 3D game combining Pachinko and Pinball mechanics.
 
 ![Game Screenshot](https://github.com/user-attachments/assets/b1f04ce1-2a83-45d1-abec-7b04caf392b0)
