@@ -936,6 +936,220 @@ html, body {
     border-radius: 3px;
 }
 
+/* Settings Tabs */
+.settings-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 16px;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 4px;
+    border-radius: 12px;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 10px 8px;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8rem;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.tab-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+.tab-btn.active {
+    background: linear-gradient(135deg, var(--accent-cyan), var(--accent-magenta));
+    color: var(--primary-bg);
+    font-weight: 600;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* SFX Editor Styles */
+.sfx-description {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+}
+
+.sfx-selector {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.sfx-selector label {
+    font-size: 0.9rem;
+    color: var(--text-primary);
+}
+
+.sfx-selector select {
+    flex: 1;
+    padding: 10px 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.sfx-selector select:focus {
+    outline: none;
+    border-color: var(--accent-cyan);
+}
+
+.test-btn-large {
+    padding: 10px 16px;
+    background: linear-gradient(135deg, var(--accent-green), #16a34a);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.test-btn-large:hover {
+    transform: scale(1.05);
+}
+
+.test-btn-large:active {
+    transform: scale(0.95);
+}
+
+/* Waveform Selector */
+.waveform-selector {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+}
+
+.wave-btn {
+    padding: 12px 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.wave-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+.wave-btn.active {
+    background: linear-gradient(135deg, var(--accent-magenta), #a855f7);
+    border-color: var(--accent-magenta);
+    color: white;
+}
+
+/* SFX Parameter Sliders */
+.sfx-param {
+    margin-bottom: 12px;
+}
+
+.sfx-param label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+}
+
+.sfx-param input[type="range"] {
+    width: calc(100% - 60px);
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    outline: none;
+    -webkit-appearance: none;
+}
+
+.sfx-param input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    background: linear-gradient(135deg, var(--accent-cyan), #0080ff);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 8px rgba(0, 240, 255, 0.5);
+}
+
+.sfx-param input[type="number"] {
+    width: 100%;
+    padding: 10px 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+}
+
+.sfx-param input[type="number"]:focus {
+    outline: none;
+    border-color: var(--accent-cyan);
+}
+
+.sfx-param span {
+    display: inline-block;
+    min-width: 55px;
+    text-align: right;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.75rem;
+    color: var(--accent-cyan);
+    margin-left: 8px;
+}
+
+.param-hint {
+    display: block !important;
+    font-size: 0.7rem !important;
+    color: var(--text-secondary) !important;
+    margin-top: 4px;
+    text-align: left !important;
+}
+
+/* SFX Buttons */
+.sfx-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+/* Debug Info */
+.debug-info {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.debug-info p {
+    margin: 6px 0;
+}
+
+.debug-info span {
+    color: var(--accent-cyan);
+    font-family: 'Orbitron', sans-serif;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     #score-value {
@@ -968,6 +1182,19 @@ html, body {
     
     .preset-buttons {
         grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .waveform-selector {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .settings-tabs {
+        flex-wrap: wrap;
+    }
+    
+    .tab-btn {
+        font-size: 0.7rem;
+        padding: 8px 4px;
     }
 }
 

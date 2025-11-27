@@ -215,7 +215,9 @@ export class Cannon {
      * Now shoots UPWARD from bottom of playfield
      */
     calculateLaunchVelocity(power) {
-        const baseSpeed = power * CONFIG.CANNON.LAUNCH_VELOCITY_SCALE * 100;
+        // Apply power multiplier from config (for testing)
+        const powerMultiplier = CONFIG.CANNON.POWER.MULTIPLIER || 1.0;
+        const baseSpeed = power * CONFIG.CANNON.LAUNCH_VELOCITY_SCALE * 100 * powerMultiplier;
         
         // Direction based on rotation and elevation
         const rotationAngle = this.rotation * CONFIG.CANNON.ROTATION.MAX;

@@ -1,7 +1,7 @@
 /**
  * Audio Manager
  * Uses jsfxr-style synthesis for procedural sound generation
- * Now includes individual sound volume controls
+ * Includes individual sound volume and parameter controls (sfxr.me style)
  */
 
 export class AudioManager {
@@ -30,6 +30,153 @@ export class AudioManager {
             gameOver: 0.8,
             uiClick: 0.8,
             flipper: 0.8
+        };
+        
+        // SFXR-style sound parameters for each sound (allows customization)
+        this.soundParams = {
+            fire: {
+                type: 'square',
+                frequency: 440,
+                duration: 0.15,
+                attack: 0.01,
+                decay: 0.1,
+                sustain: 0.02,
+                release: 0.02,
+                frequencySlide: 0.3,
+                sustainLevel: 0.7
+            },
+            peg: {
+                type: 'square',
+                frequency: 800,
+                duration: 0.08,
+                attack: 0.001,
+                decay: 0.05,
+                sustain: 0.01,
+                release: 0.02,
+                frequencySlide: -0.2,
+                sustainLevel: 0.7
+            },
+            bumper: {
+                type: 'sawtooth',
+                frequency: 200,
+                duration: 0.25,
+                attack: 0.001,
+                decay: 0.1,
+                sustain: 0.1,
+                release: 0.05,
+                frequencySlide: 0.5,
+                sustainLevel: 0.7
+            },
+            rampEnter: {
+                type: 'sine',
+                frequency: 300,
+                duration: 0.2,
+                attack: 0.01,
+                decay: 0.1,
+                sustain: 0.05,
+                release: 0.05,
+                frequencySlide: 0.2,
+                sustainLevel: 0.7
+            },
+            rampExit: {
+                type: 'square',
+                frequency: 600,
+                duration: 0.15,
+                attack: 0.001,
+                decay: 0.05,
+                sustain: 0.05,
+                release: 0.05,
+                frequencySlide: 0.4,
+                sustainLevel: 0.7
+            },
+            target: {
+                type: 'sine',
+                frequency: 523,
+                duration: 0.2,
+                attack: 0.01,
+                decay: 0.1,
+                sustain: 0.05,
+                release: 0.05,
+                frequencySlide: 0.3,
+                sustainLevel: 0.7
+            },
+            jackpotTrigger: {
+                type: 'square',
+                frequency: 880,
+                duration: 0.3,
+                attack: 0.01,
+                decay: 0.1,
+                sustain: 0.15,
+                release: 0.05,
+                frequencySlide: 0,
+                sustainLevel: 0.7
+            },
+            reelSpin: {
+                type: 'sawtooth',
+                frequency: 100,
+                duration: 0.5,
+                attack: 0.1,
+                decay: 0.2,
+                sustain: 0.15,
+                release: 0.05,
+                frequencySlide: 0.1,
+                sustainLevel: 0.7
+            },
+            reelStop: {
+                type: 'square',
+                frequency: 150,
+                duration: 0.1,
+                attack: 0.001,
+                decay: 0.05,
+                sustain: 0.02,
+                release: 0.02,
+                frequencySlide: -0.3,
+                sustainLevel: 0.7
+            },
+            drain: {
+                type: 'sawtooth',
+                frequency: 200,
+                duration: 0.4,
+                attack: 0.01,
+                decay: 0.2,
+                sustain: 0.15,
+                release: 0.05,
+                frequencySlide: -0.5,
+                sustainLevel: 0.7
+            },
+            gameOver: {
+                type: 'sawtooth',
+                frequency: 150,
+                duration: 0.8,
+                attack: 0.1,
+                decay: 0.4,
+                sustain: 0.2,
+                release: 0.1,
+                frequencySlide: -0.3,
+                sustainLevel: 0.7
+            },
+            uiClick: {
+                type: 'sine',
+                frequency: 600,
+                duration: 0.08,
+                attack: 0.01,
+                decay: 0.04,
+                sustain: 0.02,
+                release: 0.01,
+                frequencySlide: 0,
+                sustainLevel: 0.7
+            },
+            flipper: {
+                type: 'square',
+                frequency: 250,
+                duration: 0.06,
+                attack: 0.001,
+                decay: 0.03,
+                sustain: 0.02,
+                release: 0.01,
+                frequencySlide: 0.2,
+                sustainLevel: 0.7
+            }
         };
     }
 
@@ -61,167 +208,70 @@ export class AudioManager {
      * Generate all game sounds using jsfxr-style synthesis
      */
     generateSounds() {
-        // Ball fire sound - digital beep + whoosh
-        this.sounds.fire = this.createSound({
-            type: 'square',
-            frequency: 440,
-            duration: 0.15,
-            attack: 0.01,
-            decay: 0.1,
-            sustain: 0.02,
-            release: 0.02,
-            frequencySlide: 0.3
-        });
+        // Generate all sounds from stored parameters
+        for (const soundName of Object.keys(this.soundParams)) {
+            this.sounds[soundName] = this.createSound(this.soundParams[soundName]);
+        }
         
-        // Peg contact sound - crisp metallic click
-        this.sounds.peg = this.createSound({
-            type: 'square',
-            frequency: 800,
-            duration: 0.08,
-            attack: 0.001,
-            decay: 0.05,
-            sustain: 0.01,
-            release: 0.02,
-            frequencySlide: -0.2
-        });
-        
-        // Bumper hit sound - loud impact + boing
-        this.sounds.bumper = this.createSound({
-            type: 'sawtooth',
-            frequency: 200,
-            duration: 0.25,
-            attack: 0.001,
-            decay: 0.1,
-            sustain: 0.1,
-            release: 0.05,
-            frequencySlide: 0.5
-        });
-        
-        // Ramp enter sound - smooth slide tone
-        this.sounds.rampEnter = this.createSound({
-            type: 'sine',
-            frequency: 300,
-            duration: 0.2,
-            attack: 0.01,
-            decay: 0.1,
-            sustain: 0.05,
-            release: 0.05,
-            frequencySlide: 0.2
-        });
-        
-        // Ramp exit sound - launch spring release
-        this.sounds.rampExit = this.createSound({
-            type: 'square',
-            frequency: 600,
-            duration: 0.15,
-            attack: 0.001,
-            decay: 0.05,
-            sustain: 0.05,
-            release: 0.05,
-            frequencySlide: 0.4
-        });
-        
-        // Target hit sound - ascending chime
-        this.sounds.target = this.createSound({
-            type: 'sine',
-            frequency: 523,
-            duration: 0.2,
-            attack: 0.01,
-            decay: 0.1,
-            sustain: 0.05,
-            release: 0.05,
-            frequencySlide: 0.3
-        });
-        
-        // All targets complete - victory fanfare
+        // Special sounds that need custom generation
         this.sounds.allTargets = this.createFanfare();
-        
-        // Jackpot trigger - alarm beep
-        this.sounds.jackpotTrigger = this.createSound({
-            type: 'square',
-            frequency: 880,
-            duration: 0.3,
-            attack: 0.01,
-            decay: 0.1,
-            sustain: 0.15,
-            release: 0.05,
-            frequencySlide: 0
-        });
-        
-        // Reel spin sound - mechanical whirr
-        this.sounds.reelSpin = this.createSound({
-            type: 'sawtooth',
-            frequency: 100,
-            duration: 0.5,
-            attack: 0.1,
-            decay: 0.2,
-            sustain: 0.15,
-            release: 0.05,
-            frequencySlide: 0.1
-        });
-        
-        // Reel stop sound - mechanical clack
-        this.sounds.reelStop = this.createSound({
-            type: 'square',
-            frequency: 150,
-            duration: 0.1,
-            attack: 0.001,
-            decay: 0.05,
-            sustain: 0.02,
-            release: 0.02,
-            frequencySlide: -0.3
-        });
-        
-        // Jackpot win sound - triumph horn
         this.sounds.jackpotWin = this.createTriumph();
-        
-        // Drain/loss sound - sad trombone
-        this.sounds.drain = this.createSound({
-            type: 'sawtooth',
-            frequency: 200,
-            duration: 0.4,
-            attack: 0.01,
-            decay: 0.2,
-            sustain: 0.15,
-            release: 0.05,
-            frequencySlide: -0.5
-        });
-        
-        // Game over sound - dramatic end
-        this.sounds.gameOver = this.createSound({
-            type: 'sawtooth',
-            frequency: 150,
-            duration: 0.8,
-            attack: 0.1,
-            decay: 0.4,
-            sustain: 0.2,
-            release: 0.1,
-            frequencySlide: -0.3
-        });
-        
-        // UI button click - soft beep
-        this.sounds.uiClick = this.createSound({
-            type: 'sine',
-            frequency: 600,
-            duration: 0.08,
-            attack: 0.01,
-            decay: 0.04,
-            sustain: 0.02,
-            release: 0.01,
-            frequencySlide: 0
-        });
-        
-        // Flipper activation sound
-        this.sounds.flipper = this.createSound({
-            type: 'square',
-            frequency: 250,
-            duration: 0.06,
-            attack: 0.001,
-            decay: 0.03,
-            sustain: 0.02,
-            release: 0.01,
-            frequencySlide: 0.2
-        });
+    }
+    
+    /**
+     * Regenerate a specific sound with new parameters
+     */
+    regenerateSound(name) {
+        if (this.soundParams[name]) {
+            this.sounds[name] = this.createSound(this.soundParams[name]);
+        }
+    }
+    
+    /**
+     * Get sound parameters for a specific sound
+     */
+    getSoundParams(name) {
+        return this.soundParams[name] ? { ...this.soundParams[name] } : null;
+    }
+    
+    /**
+     * Set sound parameters for a specific sound and regenerate
+     */
+    setSoundParams(name, params) {
+        if (this.soundParams[name]) {
+            // Update individual parameters
+            for (const key of Object.keys(params)) {
+                if (Object.prototype.hasOwnProperty.call(this.soundParams[name], key)) {
+                    this.soundParams[name][key] = params[key];
+                }
+            }
+            // Regenerate the sound
+            this.regenerateSound(name);
+        }
+    }
+    
+    /**
+     * Set a single parameter for a sound
+     */
+    setSoundParam(name, param, value) {
+        if (this.soundParams[name] && Object.prototype.hasOwnProperty.call(this.soundParams[name], param)) {
+            this.soundParams[name][param] = value;
+            this.regenerateSound(name);
+        }
+    }
+    
+    /**
+     * Get list of editable sounds
+     */
+    getEditableSounds() {
+        return Object.keys(this.soundParams);
+    }
+    
+    /**
+     * Get list of available waveform types
+     */
+    getWaveformTypes() {
+        return ['sine', 'square', 'sawtooth', 'triangle'];
     }
 
     /**

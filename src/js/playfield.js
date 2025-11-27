@@ -56,18 +56,21 @@ export class Playfield {
     }
 
     /**
-     * Create the backboard (playing surface)
+     * Create the backboard (playing surface) with generated background image
      */
     createBackboard() {
         const width = CONFIG.PLAYFIELD.WIDTH;
         const height = CONFIG.PLAYFIELD.HEIGHT;
         
-        // Visual backboard
+        // Generate background texture
+        const backgroundTexture = this.generateBackgroundTexture(width, height);
+        
+        // Visual backboard with generated texture
         const geometry = new THREE.PlaneGeometry(width, height);
         const material = new THREE.MeshStandardMaterial({
-            color: 0x1a1a2e,
-            metalness: 0.2,
-            roughness: 0.8
+            map: backgroundTexture,
+            metalness: 0.1,
+            roughness: 0.9
         });
         
         const mesh = new THREE.Mesh(geometry, material);
@@ -76,9 +79,218 @@ export class Playfield {
         
         this.game.renderer.add(mesh);
         this.meshes.push(mesh);
+        this.backboardMesh = mesh;
         
         // Add decorative patterns
         this.addBackboardDecorations(width, height);
+    }
+    
+    /**
+     * Generate procedural background texture
+     */
+    generateBackgroundTexture(width, height) {
+        const canvas = document.createElement('canvas');
+        const scale = 100; // Pixels per unit
+        canvas.width = width * scale;
+        canvas.height = height * scale;
+        const ctx = canvas.getContext('2d');
+        
+        // Base gradient background (dark arcade theme)
+        const baseGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        baseGradient.addColorStop(0, '#0a0a1a');    // Dark blue at top
+        baseGradient.addColorStop(0.3, '#1a1a3a'); // Deep purple
+        baseGradient.addColorStop(0.7, '#1a0a2a'); // Dark violet
+        baseGradient.addColorStop(1, '#0a0a1a');   // Back to dark
+        ctx.fillStyle = baseGradient;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Add starfield effect
+        this.drawStarfield(ctx, canvas.width, canvas.height);
+        
+        // Add geometric patterns (arcade style)
+        this.drawArcadePatterns(ctx, canvas.width, canvas.height);
+        
+        // Add neon grid lines
+        this.drawNeonGrid(ctx, canvas.width, canvas.height);
+        
+        // Add decorative elements
+        this.drawDecorativeElements(ctx, canvas.width, canvas.height);
+        
+        // Add vignette effect
+        this.drawVignette(ctx, canvas.width, canvas.height);
+        
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.needsUpdate = true;
+        return texture;
+    }
+    
+    /**
+     * Draw starfield background
+     */
+    drawStarfield(ctx, width, height) {
+        const numStars = 200;
+        for (let i = 0; i < numStars; i++) {
+            const x = Math.random() * width;
+            const y = Math.random() * height;
+            const size = Math.random() * 2 + 0.5;
+            const brightness = Math.random() * 0.5 + 0.3;
+            
+            ctx.beginPath();
+            ctx.arc(x, y, size, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(255, 255, 255, ${brightness})`;
+            ctx.fill();
+        }
+    }
+    
+    /**
+     * Draw arcade-style geometric patterns
+     */
+    drawArcadePatterns(ctx, width, height) {
+        // Concentric circles at top (entry zone)
+        const centerX = width / 2;
+        const topY = height * 0.15;
+        
+        for (let i = 5; i >= 1; i--) {
+            const radius = i * 80;
+            ctx.beginPath();
+            ctx.arc(centerX, topY, radius, 0, Math.PI);
+            ctx.strokeStyle = `rgba(0, 240, 255, ${0.1 + i * 0.02})`;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+        
+        // Diamond pattern in middle
+        ctx.save();
+        ctx.translate(width / 2, height * 0.45);
+        for (let i = 0; i < 4; i++) {
+            ctx.rotate(Math.PI / 8);
+            ctx.beginPath();
+            ctx.moveTo(0, -150);
+            ctx.lineTo(150, 0);
+            ctx.lineTo(0, 150);
+            ctx.lineTo(-150, 0);
+            ctx.closePath();
+            ctx.strokeStyle = `rgba(255, 0, 255, ${0.15 - i * 0.03})`;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+        ctx.restore();
+        
+        // Triangle patterns at bottom (scoring zone)
+        const bottomY = height * 0.85;
+        for (let i = 0; i < 5; i++) {
+            const x = (i + 0.5) * (width / 5);
+            ctx.beginPath();
+            ctx.moveTo(x, bottomY);
+            ctx.lineTo(x - 60, bottomY + 80);
+            ctx.lineTo(x + 60, bottomY + 80);
+            ctx.closePath();
+            ctx.strokeStyle = 'rgba(255, 215, 0, 0.2)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+    }
+    
+    /**
+     * Draw neon grid effect
+     */
+    drawNeonGrid(ctx, width, height) {
+        // Horizontal glowing lines
+        const numHLines = 20;
+        for (let i = 0; i < numHLines; i++) {
+            const y = (i / numHLines) * height;
+            const alpha = 0.05 + Math.sin(i * 0.5) * 0.03;
+            
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(width, y);
+            ctx.strokeStyle = `rgba(0, 240, 255, ${alpha})`;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+        
+        // Perspective grid at bottom
+        ctx.save();
+        ctx.translate(width / 2, height * 0.95);
+        for (let i = -5; i <= 5; i++) {
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(i * 120, -height * 0.4);
+            ctx.strokeStyle = 'rgba(255, 0, 255, 0.1)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+        ctx.restore();
+    }
+    
+    /**
+     * Draw decorative elements (icons, symbols)
+     */
+    drawDecorativeElements(ctx, width, height) {
+        // Pachinkopolis logo/text effect at top
+        ctx.save();
+        ctx.font = 'bold 60px Orbitron, Arial';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = 'rgba(255, 215, 0, 0.15)';
+        ctx.fillText('★ PACHINKO ★', width / 2, height * 0.08);
+        ctx.restore();
+        
+        // Score zone labels
+        ctx.font = 'bold 24px Orbitron, Arial';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = 'rgba(0, 255, 128, 0.2)';
+        ctx.fillText('BONUS', width * 0.2, height * 0.8);
+        ctx.fillText('JACKPOT', width * 0.5, height * 0.75);
+        ctx.fillText('BONUS', width * 0.8, height * 0.8);
+        
+        // Side arrows
+        const drawArrow = (x, y, rotation) => {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(rotation);
+            ctx.beginPath();
+            ctx.moveTo(0, -30);
+            ctx.lineTo(20, 0);
+            ctx.lineTo(0, 30);
+            ctx.strokeStyle = 'rgba(255, 165, 0, 0.3)';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            ctx.restore();
+        };
+        
+        drawArrow(width * 0.1, height * 0.5, Math.PI / 2);
+        drawArrow(width * 0.9, height * 0.5, -Math.PI / 2);
+        
+        // Decorative circles
+        const drawGlowCircle = (x, y, radius, color) => {
+            const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+            gradient.addColorStop(0, color);
+            gradient.addColorStop(1, 'transparent');
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
+            ctx.fill();
+        };
+        
+        drawGlowCircle(width * 0.15, height * 0.3, 100, 'rgba(0, 240, 255, 0.1)');
+        drawGlowCircle(width * 0.85, height * 0.3, 100, 'rgba(255, 0, 255, 0.1)');
+        drawGlowCircle(width * 0.5, height * 0.5, 150, 'rgba(255, 215, 0, 0.08)');
+    }
+    
+    /**
+     * Draw vignette effect around edges
+     */
+    drawVignette(ctx, width, height) {
+        const gradient = ctx.createRadialGradient(
+            width / 2, height / 2, 0,
+            width / 2, height / 2, Math.max(width, height) * 0.7
+        );
+        gradient.addColorStop(0, 'transparent');
+        gradient.addColorStop(0.7, 'transparent');
+        gradient.addColorStop(1, 'rgba(0, 0, 0, 0.6)');
+        
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, width, height);
     }
 
     /**
@@ -104,6 +316,35 @@ export class Playfield {
         const rightLine = new THREE.Mesh(lineGeometry, lineMaterial);
         rightLine.position.set(width/2 - 0.5, -2, -0.45);
         this.game.renderer.add(rightLine);
+        
+        // Add glowing corner accents
+        this.addCornerAccents(width, height);
+    }
+    
+    /**
+     * Add glowing corner accent lights
+     */
+    addCornerAccents(width, height) {
+        const accentMaterial = new THREE.MeshBasicMaterial({
+            color: 0xff00ff,
+            transparent: true,
+            opacity: 0.5
+        });
+        
+        const accentGeometry = new THREE.CircleGeometry(0.3, 16);
+        
+        const positions = [
+            { x: -width/2 + 0.5, y: height/2 - 0.5 },
+            { x: width/2 - 0.5, y: height/2 - 0.5 },
+            { x: -width/2 + 0.5, y: -height/2 + 0.5 },
+            { x: width/2 - 0.5, y: -height/2 + 0.5 }
+        ];
+        
+        positions.forEach(pos => {
+            const accent = new THREE.Mesh(accentGeometry, accentMaterial.clone());
+            accent.position.set(pos.x, pos.y, -0.45);
+            this.game.renderer.add(accent);
+        });
     }
 
     /**
@@ -217,11 +458,10 @@ export class Playfield {
 
     /**
      * Create peg field - Authentic Pachinko style with curved arrangements
-     * Based on reference images: curved rows, denser packing, and feature zones
+     * Based on reference images: curved rows, denser packing, symmetrical arches, and funnel patterns
      */
     createPegs() {
         const cfg = CONFIG.PLAYFIELD.PEGS;
-        const material = this.game.renderer.createMaterial(CONFIG.MATERIALS.PEG);
         
         // Create golden/brass colored pegs for authentic look
         const goldenMaterial = this.game.renderer.createMaterial({
@@ -231,28 +471,48 @@ export class Playfield {
             roughness: 0.3
         });
         
-        // === UPPER CURVED ZONE (Entry distribution area) ===
-        // Create curved rows at the top like authentic Pachinko
-        this.createCurvedPegRow(7.5, 4.5, 12, goldenMaterial);  // Top arc
-        this.createCurvedPegRow(6.5, 4.0, 14, goldenMaterial);  // Second arc
-        this.createCurvedPegRow(5.5, 3.5, 16, goldenMaterial);  // Third arc
+        // Silver accent pegs for special paths
+        const silverMaterial = this.game.renderer.createMaterial({
+            ...CONFIG.MATERIALS.PEG,
+            color: 0xc0c0c0, // Silver color
+            metalness: 0.8,
+            roughness: 0.2
+        });
         
-        // === MIDDLE DENSE ZONE (Main playing field) ===
-        // Staggered grid pattern - denser than original
-        const startY = 4.5;
-        const endY = -2.5;
-        const vSpacing = cfg.VERTICAL_SPACING;
-        const hSpacing = cfg.HORIZONTAL_SPACING;
+        // === TOP SYMMETRICAL ARCHES (Entry distribution area) ===
+        // Create multiple symmetrical curved rows at the top like authentic Pachinko
+        this.createSymmetricalArch(8.0, 5.0, 14, goldenMaterial);   // Top wide arch
+        this.createSymmetricalArch(7.0, 4.5, 16, silverMaterial);   // Second arch
+        this.createSymmetricalArch(6.0, 4.0, 18, goldenMaterial);   // Third arch
+        this.createSymmetricalArch(5.0, 3.5, 16, silverMaterial);   // Fourth arch
         
-        // Skip zone configuration for feature areas
+        // === ANGLED ROWS WITH INTERMITTENT SPACES (Mid-upper zone) ===
+        // Create angled rows that cause balls to drop down at intervals
+        this.createAngledRowWithGaps(-4.5, 4.0, 2.5, 4.3, 10, 3, goldenMaterial, 'left');
+        this.createAngledRowWithGaps(4.5, 4.0, -2.5, 4.3, 10, 3, goldenMaterial, 'right');
+        this.createAngledRowWithGaps(-4.0, 3.2, 2.0, 3.5, 9, 2, silverMaterial, 'left');
+        this.createAngledRowWithGaps(4.0, 3.2, -2.0, 3.5, 9, 2, silverMaterial, 'right');
+        
+        // === MIDDLE ZONE (Main playing field with staggered grid) ===
+        const startY = 3.0;
+        const endY = -1.5;
+        const vSpacing = cfg.VERTICAL_SPACING * 0.9;
+        const hSpacing = cfg.HORIZONTAL_SPACING * 0.85;
+        
+        // Skip zones for feature areas and pockets
         const SKIP_ZONES = {
-            // Center area for feature zones
-            CENTER_FEATURE: { xRadius: 0.8, yMin: -1, yMax: 2 },
-            // Main V-pocket area
-            V_POCKET_CENTER: { xRadius: 0.6, yMax: -3 },
-            // Side bonus pocket areas
-            V_POCKET_LEFT: { xCenter: -3, xRadius: 0.5, yMin: -5, yMax: -3 },
-            V_POCKET_RIGHT: { xCenter: 3, xRadius: 0.5, yMin: -5, yMax: -3 }
+            CENTER_FEATURE: { xRadius: 1.2, yMin: -1, yMax: 3.5 },
+            V_POCKET_CENTER: { xRadius: 0.8, yMax: -3 },
+            V_POCKET_LEFT: { xCenter: -3, xRadius: 0.6, yMin: -5, yMax: -2 },
+            V_POCKET_RIGHT: { xCenter: 3, xRadius: 0.6, yMin: -5, yMax: -2 },
+            BUMPER_ZONES: [
+                { x: -3, y: 3, radius: 0.8 },
+                { x: 0, y: 4, radius: 0.8 },
+                { x: 3, y: 3, radius: 0.8 },
+                { x: -2, y: 1, radius: 0.8 },
+                { x: 2, y: 1, radius: 0.8 },
+                { x: 0, y: 2, radius: 0.8 }
+            ]
         };
         
         let row = 0;
@@ -262,45 +522,116 @@ export class Playfield {
             
             // Vary row width based on position (narrower at bottom for funnel effect)
             const rowProgress = (startY - y) / (startY - endY);
-            const maxPegs = Math.floor(12 - rowProgress * 3); // 12 at top, 9 at bottom
+            const maxPegs = Math.floor(14 - rowProgress * 4);
             const rowWidth = (maxPegs - 1) * hSpacing;
             const startX = -rowWidth / 2 + offset;
             
             for (let i = 0; i < maxPegs; i++) {
                 const x = startX + i * hSpacing;
                 
-                // Skip center area for feature zones
+                // Check if we should skip this position
+                let skip = false;
+                
+                // Skip center feature zone
                 if (Math.abs(x) < SKIP_ZONES.CENTER_FEATURE.xRadius && 
                     y < SKIP_ZONES.CENTER_FEATURE.yMax && 
-                    y > SKIP_ZONES.CENTER_FEATURE.yMin) continue;
+                    y > SKIP_ZONES.CENTER_FEATURE.yMin) skip = true;
                 
-                // Skip areas for V-pockets
+                // Skip V-pocket areas
                 if (Math.abs(x) < SKIP_ZONES.V_POCKET_CENTER.xRadius && 
-                    y < SKIP_ZONES.V_POCKET_CENTER.yMax) continue;
+                    y < SKIP_ZONES.V_POCKET_CENTER.yMax) skip = true;
                 if (Math.abs(x - SKIP_ZONES.V_POCKET_RIGHT.xCenter) < SKIP_ZONES.V_POCKET_RIGHT.xRadius && 
                     y < SKIP_ZONES.V_POCKET_RIGHT.yMax && 
-                    y > SKIP_ZONES.V_POCKET_RIGHT.yMin) continue;
+                    y > SKIP_ZONES.V_POCKET_RIGHT.yMin) skip = true;
                 if (Math.abs(x - SKIP_ZONES.V_POCKET_LEFT.xCenter) < SKIP_ZONES.V_POCKET_LEFT.xRadius && 
                     y < SKIP_ZONES.V_POCKET_LEFT.yMax && 
-                    y > SKIP_ZONES.V_POCKET_LEFT.yMin) continue;
+                    y > SKIP_ZONES.V_POCKET_LEFT.yMin) skip = true;
                 
-                this.createPeg({ x, y, z: 0 }, goldenMaterial);
+                // Skip bumper zones
+                for (const bz of SKIP_ZONES.BUMPER_ZONES) {
+                    const dist = Math.sqrt(Math.pow(x - bz.x, 2) + Math.pow(y - bz.y, 2));
+                    if (dist < bz.radius) skip = true;
+                }
+                
+                if (!skip) {
+                    this.createPeg({ x, y, z: 0 }, goldenMaterial);
+                }
             }
             row++;
         }
         
+        // === SYMMETRICAL FUNNEL GUIDES (Lower zone) ===
+        // Create V-shaped funnel pegs to guide balls toward center
+        this.createSymmetricalFunnel(0, -2, 5.0, 3.0, 8, silverMaterial);
+        
         // === SIDE CURVED CHANNELS ===
-        // Left curved channel pegs
-        this.createCurvedChannelPegs(-4.5, 3, -3.5, -2, 8, goldenMaterial, 'left');
-        // Right curved channel pegs
-        this.createCurvedChannelPegs(4.5, 3, 3.5, -2, 8, goldenMaterial, 'right');
+        // Create curved channel pegs on sides to direct ball flow
+        this.createCurvedChannelPegs(-5.0, 4.0, -4.0, 0, 10, goldenMaterial, 'left');
+        this.createCurvedChannelPegs(5.0, 4.0, 4.0, 0, 10, goldenMaterial, 'right');
         
-        // === LOWER FUNNEL ZONE ===
-        // Guide pegs toward center pockets
-        this.createFunnelPegs(-3.5, -3, goldenMaterial);
-        this.createFunnelPegs(3.5, -3, goldenMaterial);
+        // === LOWER FUNNEL ZONE PEGS ===
+        // Additional funnel pegs toward center and side pockets
+        this.createFunnelPegs(-4.0, -2.5, goldenMaterial);
+        this.createFunnelPegs(4.0, -2.5, goldenMaterial);
         
-        console.log(`Created ${this.pegs.length} pegs (authentic Pachinko layout)`);
+        // === BOTTOM DROP PATHS ===
+        // Create paths that lead to jackpot funnel
+        this.createDropPath(-1.5, -3, -0.5, -5, 6, silverMaterial);
+        this.createDropPath(1.5, -3, 0.5, -5, 6, silverMaterial);
+        
+        console.log(`Created ${this.pegs.length} pegs (authentic Pachinko layout with symmetrical arches)`);
+    }
+    
+    /**
+     * Create a symmetrical arch of pegs (like authentic Pachinko)
+     */
+    createSymmetricalArch(centerY, radius, numPegs, material) {
+        const startAngle = Math.PI * 0.1;
+        const endAngle = Math.PI * 0.9;
+        const angleStep = (endAngle - startAngle) / (numPegs - 1);
+        
+        for (let i = 0; i < numPegs; i++) {
+            const angle = startAngle + i * angleStep;
+            const x = Math.cos(angle) * radius;
+            const y = centerY - Math.sin(angle) * (radius * 0.25);
+            this.createPeg({ x, y, z: 0 }, material);
+        }
+    }
+    
+    /**
+     * Create angled row with intermittent gaps (causes balls to drop through)
+     */
+    createAngledRowWithGaps(startX, startY, endX, endY, numPegs, gapEvery, material, side) {
+        for (let i = 0; i < numPegs; i++) {
+            // Skip every 'gapEvery' pegs to create gaps
+            if ((i + 1) % gapEvery === 0) continue;
+            
+            const t = i / (numPegs - 1);
+            const x = startX + (endX - startX) * t;
+            const y = startY + (endY - startY) * t;
+            this.createPeg({ x, y, z: 0 }, material);
+        }
+    }
+    
+    /**
+     * Create symmetrical V-shaped funnel to guide balls toward center
+     */
+    createSymmetricalFunnel(centerX, topY, width, height, pegsPerSide, material) {
+        // Left side of funnel
+        for (let i = 0; i < pegsPerSide; i++) {
+            const t = i / (pegsPerSide - 1);
+            const x = centerX - width / 2 + (width / 2) * t * 0.8;
+            const y = topY - height * t;
+            this.createPeg({ x, y, z: 0 }, material);
+        }
+        
+        // Right side of funnel (mirror)
+        for (let i = 0; i < pegsPerSide; i++) {
+            const t = i / (pegsPerSide - 1);
+            const x = centerX + width / 2 - (width / 2) * t * 0.8;
+            const y = topY - height * t;
+            this.createPeg({ x, y, z: 0 }, material);
+        }
     }
     
     /**
@@ -328,7 +659,7 @@ export class Playfield {
             const x = startX + (endX - startX) * t;
             const y = startY + (endY - startY) * t;
             // Add slight curve
-            const curveOffset = Math.sin(t * Math.PI) * (side === 'left' ? 0.3 : -0.3);
+            const curveOffset = Math.sin(t * Math.PI) * (side === 'left' ? 0.4 : -0.4);
             this.createPeg({ x: x + curveOffset, y, z: 0 }, material);
         }
     }
@@ -339,9 +670,21 @@ export class Playfield {
     createFunnelPegs(startX, startY, material) {
         const direction = startX > 0 ? -1 : 1;
         // Create V-shape pointing toward center
-        for (let i = 0; i < 4; i++) {
-            const x = startX + direction * i * 0.4;
-            const y = startY - i * 0.4;
+        for (let i = 0; i < 5; i++) {
+            const x = startX + direction * i * 0.35;
+            const y = startY - i * 0.35;
+            this.createPeg({ x, y, z: 0 }, material);
+        }
+    }
+    
+    /**
+     * Create drop path for balls to fall through
+     */
+    createDropPath(startX, startY, endX, endY, count, material) {
+        for (let i = 0; i < count; i++) {
+            const t = i / (count - 1);
+            const x = startX + (endX - startX) * t;
+            const y = startY + (endY - startY) * t;
             this.createPeg({ x, y, z: 0 }, material);
         }
     }
@@ -360,6 +703,11 @@ export class Playfield {
         mesh.rotation.x = Math.PI / 2; // Rotate to face forward
         mesh.castShadow = true;
         
+        // Add emissive property for LED glow effect
+        mesh.material = mesh.material.clone();
+        mesh.material.emissive = new THREE.Color(0x000000);
+        mesh.material.emissiveIntensity = 0;
+        
         this.game.renderer.add(mesh);
         this.meshes.push(mesh);
         
@@ -371,7 +719,7 @@ export class Playfield {
         
         // Add collision callback
         body.addEventListener('collide', (e) => {
-            this.onPegHit(e, mesh);
+            this.onPegHit(e, mesh, position);
         });
         
         this.game.physics.addBody(body);
@@ -379,9 +727,9 @@ export class Playfield {
     }
 
     /**
-     * Handle peg collision
+     * Handle peg collision with LED lighting effect
      */
-    onPegHit(event, mesh) {
+    onPegHit(event, mesh, position) {
         // Check if collision is with a ball
         const otherBody = event.body;
         if (otherBody.userData && otherBody.userData.isBall) {
@@ -391,12 +739,22 @@ export class Playfield {
             // Play sound
             this.game.audio.playSound('peg', 0.3);
             
-            // Visual flash effect
+            // Visual flash effect with LED glow
             const originalColor = mesh.material.color.getHex();
             mesh.material.color.setHex(0xffffff);
+            mesh.material.emissive.setHex(0xffff00);
+            mesh.material.emissiveIntensity = 1.5;
+            
+            // Flash nearby LED
+            if (this.game.renderer.flashLED) {
+                this.game.renderer.flashLED(position.x, position.y, 0xffff00);
+            }
+            
             setTimeout(() => {
                 mesh.material.color.setHex(originalColor);
-            }, 50);
+                mesh.material.emissive.setHex(0x000000);
+                mesh.material.emissiveIntensity = 0;
+            }, 80);
         }
     }
 

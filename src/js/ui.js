@@ -97,6 +97,9 @@ export class UIManager {
             });
         }
         
+        // Setup tabs
+        this.setupSettingsTabs();
+        
         // Master volume slider
         const masterVolumeSlider = this.elements.masterVolume;
         if (masterVolumeSlider) {
@@ -128,6 +131,245 @@ export class UIManager {
         
         // Test buttons
         this.setupTestButtons();
+        
+        // SFX Editor
+        this.setupSFXEditor();
+        
+        // Gameplay settings
+        this.setupGameplaySettings();
+    }
+    
+    /**
+     * Setup settings tabs
+     */
+    setupSettingsTabs() {
+        const tabs = document.querySelectorAll('.tab-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
+        
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const targetTab = tab.getAttribute('data-tab');
+                
+                // Update active tab button
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                // Update active tab content
+                tabContents.forEach(content => {
+                    content.classList.remove('active');
+                    if (content.id === targetTab) {
+                        content.classList.add('active');
+                    }
+                });
+            });
+        });
+    }
+    
+    /**
+     * Setup SFX Editor controls (sfxr.me style)
+     */
+    setupSFXEditor() {
+        const sfxSelect = document.getElementById('sfx-select');
+        const testCurrentBtn = document.getElementById('sfx-test-current');
+        const waveButtons = document.querySelectorAll('.wave-btn');
+        const randomizeBtn = document.getElementById('sfx-randomize');
+        const resetSoundBtn = document.getElementById('sfx-reset-sound');
+        
+        // Store default parameters for reset
+        this.defaultSoundParams = {};
+        
+        // Load current sound parameters when selection changes
+        if (sfxSelect) {
+            sfxSelect.addEventListener('change', () => {
+                this.loadSoundParams(sfxSelect.value);
+            });
+            // Load initial sound
+            setTimeout(() => this.loadSoundParams(sfxSelect.value), 100);
+        }
+        
+        // Test current sound
+        if (testCurrentBtn) {
+            testCurrentBtn.addEventListener('click', () => {
+                const soundName = sfxSelect?.value || 'fire';
+                this.game.audio.playSound(soundName);
+            });
+        }
+        
+        // Waveform buttons
+        waveButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const waveType = btn.getAttribute('data-type');
+                const soundName = sfxSelect?.value || 'fire';
+                
+                // Update active button
+                waveButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                // Update sound parameter
+                this.game.audio.setSoundParam(soundName, 'type', waveType);
+            });
+        });
+        
+        // Setup parameter sliders
+        this.setupSFXParamSliders();
+        
+        // Randomize button
+        if (randomizeBtn) {
+            randomizeBtn.addEventListener('click', () => {
+                const soundName = sfxSelect?.value || 'fire';
+                this.randomizeSoundParams(soundName);
+            });
+        }
+        
+        // Reset button
+        if (resetSoundBtn) {
+            resetSoundBtn.addEventListener('click', () => {
+                const soundName = sfxSelect?.value || 'fire';
+                this.resetSoundParams(soundName);
+            });
+        }
+    }
+    
+    /**
+     * Setup SFX parameter sliders
+     */
+    setupSFXParamSliders() {
+        const paramMappings = {
+            'sfx-frequency': { param: 'frequency', display: 'sfx-frequency-val', suffix: ' Hz' },
+            'sfx-freq-slide': { param: 'frequencySlide', display: 'sfx-freq-slide-val', suffix: '' },
+            'sfx-attack': { param: 'attack', display: 'sfx-attack-val', suffix: 's' },
+            'sfx-decay': { param: 'decay', display: 'sfx-decay-val', suffix: 's' },
+            'sfx-sustain': { param: 'sustain', display: 'sfx-sustain-val', suffix: 's' },
+            'sfx-release': { param: 'release', display: 'sfx-release-val', suffix: 's' },
+            'sfx-duration': { param: 'duration', display: 'sfx-duration-val', suffix: 's' }
+        };
+        
+        const sfxSelect = document.getElementById('sfx-select');
+        
+        Object.entries(paramMappings).forEach(([sliderId, config]) => {
+            const slider = document.getElementById(sliderId);
+            if (slider) {
+                slider.addEventListener('input', (e) => {
+                    const soundName = sfxSelect?.value || 'fire';
+                    const value = parseFloat(e.target.value);
+                    
+                    // Update display
+                    const display = document.getElementById(config.display);
+                    if (display) {
+                        display.textContent = value.toFixed(config.param === 'frequency' ? 0 : 2) + config.suffix;
+                    }
+                    
+                    // Update sound parameter
+                    this.game.audio.setSoundParam(soundName, config.param, value);
+                });
+            }
+        });
+    }
+    
+    /**
+     * Load sound parameters into the editor
+     */
+    loadSoundParams(soundName) {
+        const params = this.game.audio.getSoundParams(soundName);
+        if (!params) return;
+        
+        // Store defaults if not already stored
+        if (!this.defaultSoundParams[soundName]) {
+            this.defaultSoundParams[soundName] = { ...params };
+        }
+        
+        // Update waveform buttons
+        const waveButtons = document.querySelectorAll('.wave-btn');
+        waveButtons.forEach(btn => {
+            btn.classList.toggle('active', btn.getAttribute('data-type') === params.type);
+        });
+        
+        // Update sliders
+        const sliderMappings = {
+            'sfx-frequency': { value: params.frequency, display: 'sfx-frequency-val', suffix: ' Hz', precision: 0 },
+            'sfx-freq-slide': { value: params.frequencySlide, display: 'sfx-freq-slide-val', suffix: '', precision: 2 },
+            'sfx-attack': { value: params.attack, display: 'sfx-attack-val', suffix: 's', precision: 3 },
+            'sfx-decay': { value: params.decay, display: 'sfx-decay-val', suffix: 's', precision: 2 },
+            'sfx-sustain': { value: params.sustain, display: 'sfx-sustain-val', suffix: 's', precision: 2 },
+            'sfx-release': { value: params.release, display: 'sfx-release-val', suffix: 's', precision: 2 },
+            'sfx-duration': { value: params.duration, display: 'sfx-duration-val', suffix: 's', precision: 2 }
+        };
+        
+        Object.entries(sliderMappings).forEach(([sliderId, config]) => {
+            const slider = document.getElementById(sliderId);
+            const display = document.getElementById(config.display);
+            if (slider) {
+                slider.value = config.value;
+            }
+            if (display) {
+                display.textContent = config.value.toFixed(config.precision) + config.suffix;
+            }
+        });
+    }
+    
+    /**
+     * Randomize sound parameters
+     */
+    randomizeSoundParams(soundName) {
+        const waveTypes = ['sine', 'square', 'sawtooth', 'triangle'];
+        const randomParams = {
+            type: waveTypes[Math.floor(Math.random() * waveTypes.length)],
+            frequency: Math.floor(Math.random() * 1500) + 100,
+            frequencySlide: (Math.random() * 2) - 1,
+            attack: Math.random() * 0.3 + 0.001,
+            decay: Math.random() * 0.4 + 0.01,
+            sustain: Math.random() * 0.3 + 0.01,
+            release: Math.random() * 0.3 + 0.01,
+            duration: Math.random() * 0.5 + 0.05
+        };
+        
+        this.game.audio.setSoundParams(soundName, randomParams);
+        this.loadSoundParams(soundName);
+        this.game.audio.playSound(soundName);
+    }
+    
+    /**
+     * Reset sound parameters to defaults
+     */
+    resetSoundParams(soundName) {
+        if (this.defaultSoundParams[soundName]) {
+            this.game.audio.setSoundParams(soundName, this.defaultSoundParams[soundName]);
+            this.loadSoundParams(soundName);
+        }
+    }
+    
+    /**
+     * Setup gameplay settings (cannon power, etc.)
+     */
+    setupGameplaySettings() {
+        const powerMultiplierInput = document.getElementById('cannon-power-multiplier');
+        const currentPowerDisplay = document.getElementById('current-power-mult');
+        
+        if (powerMultiplierInput) {
+            // Import CONFIG dynamically to update it
+            powerMultiplierInput.addEventListener('change', (e) => {
+                const value = parseFloat(e.target.value) || 1.0;
+                // Update the config directly (we need to access it from the game)
+                if (this.game && this.game.cannon) {
+                    // We'll update the CONFIG through a method
+                    this.updateCannonPowerMultiplier(value);
+                }
+                if (currentPowerDisplay) {
+                    currentPowerDisplay.textContent = value.toFixed(1);
+                }
+            });
+        }
+    }
+    
+    /**
+     * Update cannon power multiplier
+     */
+    updateCannonPowerMultiplier(value) {
+        // Import CONFIG and update it
+        import('./config.js').then(module => {
+            module.CONFIG.CANNON.POWER.MULTIPLIER = value;
+            console.log('Cannon power multiplier updated to:', value);
+        });
     }
     
     /**
