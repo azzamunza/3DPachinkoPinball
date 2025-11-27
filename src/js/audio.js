@@ -1,6 +1,7 @@
 /**
  * Audio Manager
- * Uses jsfxr for procedural sound generation
+ * Uses jsfxr-style synthesis for procedural sound generation
+ * Now includes individual sound volume controls
  */
 
 export class AudioManager {
@@ -11,6 +12,25 @@ export class AudioManager {
         this.masterVolume = 1.0;
         this.sfxVolume = 0.8;
         this.muted = false;
+        
+        // Individual sound volumes (0-1)
+        this.soundVolumes = {
+            fire: 0.8,
+            peg: 0.8,
+            bumper: 0.8,
+            rampEnter: 0.8,
+            rampExit: 0.8,
+            target: 0.8,
+            allTargets: 0.8,
+            jackpotTrigger: 0.8,
+            reelSpin: 0.8,
+            reelStop: 0.8,
+            jackpotWin: 0.8,
+            drain: 0.8,
+            gameOver: 0.8,
+            uiClick: 0.8,
+            flipper: 0.8
+        };
     }
 
     /**
@@ -347,8 +367,11 @@ export class AudioManager {
             const source = this.audioContext.createBufferSource();
             source.buffer = this.sounds[name];
             
+            // Get individual sound volume
+            const individualVolume = this.soundVolumes[name] || 0.8;
+            
             const gainNode = this.audioContext.createGain();
-            gainNode.gain.value = this.masterVolume * this.sfxVolume * volume;
+            gainNode.gain.value = this.masterVolume * this.sfxVolume * individualVolume * volume;
             
             source.connect(gainNode);
             gainNode.connect(this.audioContext.destination);
@@ -357,6 +380,22 @@ export class AudioManager {
         } catch (e) {
             console.warn('Error playing sound:', e);
         }
+    }
+
+    /**
+     * Set individual sound volume
+     */
+    setSoundVolume(name, volume) {
+        if (this.soundVolumes.hasOwnProperty(name)) {
+            this.soundVolumes[name] = Math.max(0, Math.min(1, volume));
+        }
+    }
+
+    /**
+     * Get individual sound volume
+     */
+    getSoundVolume(name) {
+        return this.soundVolumes[name] || 0.8;
     }
 
     /**

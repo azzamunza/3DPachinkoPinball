@@ -1,6 +1,6 @@
 /**
  * UI Manager
- * Handles HUD updates and overlays
+ * Handles HUD updates, overlays, and settings modal
  */
 
 export class UIManager {
@@ -52,10 +52,205 @@ export class UIManager {
             highScoresList: document.getElementById('high-scores-list'),
             
             // Fire button
-            fireButton: document.getElementById('fire-button')
+            fireButton: document.getElementById('fire-button'),
+            
+            // Settings
+            settingsBtn: document.getElementById('settings-btn'),
+            settingsModal: document.getElementById('settings-modal'),
+            closeSettings: document.getElementById('close-settings'),
+            masterVolume: document.getElementById('master-volume'),
+            muteToggle: document.getElementById('mute-toggle')
         };
         
+        // Setup settings modal
+        this.setupSettingsModal();
+        
         console.log('UI manager initialized');
+    }
+    
+    /**
+     * Setup settings modal event listeners
+     */
+    setupSettingsModal() {
+        const settingsBtn = this.elements.settingsBtn;
+        const settingsModal = this.elements.settingsModal;
+        const closeSettings = this.elements.closeSettings;
+        
+        if (settingsBtn && settingsModal) {
+            // Open settings
+            settingsBtn.addEventListener('click', () => {
+                settingsModal.classList.remove('hidden');
+            });
+            
+            // Close settings
+            if (closeSettings) {
+                closeSettings.addEventListener('click', () => {
+                    settingsModal.classList.add('hidden');
+                });
+            }
+            
+            // Close on backdrop click
+            settingsModal.addEventListener('click', (e) => {
+                if (e.target === settingsModal) {
+                    settingsModal.classList.add('hidden');
+                }
+            });
+        }
+        
+        // Master volume slider
+        const masterVolumeSlider = this.elements.masterVolume;
+        if (masterVolumeSlider) {
+            masterVolumeSlider.addEventListener('input', (e) => {
+                const volume = parseInt(e.target.value) / 100;
+                this.game.audio.setMasterVolume(volume);
+                const valueDisplay = document.getElementById('master-volume-val');
+                if (valueDisplay) {
+                    valueDisplay.textContent = `${e.target.value}%`;
+                }
+            });
+        }
+        
+        // Individual sound volume sliders
+        this.setupSoundVolumeSliders();
+        
+        // Mute toggle
+        const muteToggle = this.elements.muteToggle;
+        if (muteToggle) {
+            muteToggle.addEventListener('click', () => {
+                const isMuted = this.game.audio.toggleMute();
+                muteToggle.textContent = isMuted ? '🔇 Sound Off' : '🔊 Sound On';
+                muteToggle.classList.toggle('muted', isMuted);
+            });
+        }
+        
+        // Preset buttons
+        this.setupPresetButtons();
+        
+        // Test buttons
+        this.setupTestButtons();
+    }
+    
+    /**
+     * Setup individual sound volume sliders
+     */
+    setupSoundVolumeSliders() {
+        const soundMappings = {
+            'sfx-fire-vol': 'fire',
+            'sfx-peg-vol': 'peg',
+            'sfx-bumper-vol': 'bumper',
+            'sfx-target-vol': 'target',
+            'sfx-jackpot-vol': 'jackpotTrigger',
+            'sfx-reel-vol': 'reelSpin',
+            'sfx-win-vol': 'jackpotWin',
+            'sfx-drain-vol': 'drain',
+            'sfx-flipper-vol': 'flipper'
+        };
+        
+        Object.entries(soundMappings).forEach(([sliderId, soundName]) => {
+            const slider = document.getElementById(sliderId);
+            if (slider) {
+                slider.addEventListener('input', (e) => {
+                    const volume = parseInt(e.target.value) / 100;
+                    this.game.audio.setSoundVolume(soundName, volume);
+                    
+                    // Update display
+                    const parent = slider.closest('.sound-control');
+                    if (parent) {
+                        const display = parent.querySelector('.vol-display');
+                        if (display) {
+                            display.textContent = `${e.target.value}%`;
+                        }
+                    }
+                });
+            }
+        });
+    }
+    
+    /**
+     * Setup preset buttons
+     */
+    setupPresetButtons() {
+        // Arcade preset (default)
+        const arcadeBtn = document.getElementById('preset-arcade');
+        if (arcadeBtn) {
+            arcadeBtn.addEventListener('click', () => {
+                this.applyPreset({ master: 100, sounds: 80 });
+            });
+        }
+        
+        // Quiet preset
+        const quietBtn = document.getElementById('preset-quiet');
+        if (quietBtn) {
+            quietBtn.addEventListener('click', () => {
+                this.applyPreset({ master: 50, sounds: 40 });
+            });
+        }
+        
+        // Loud preset
+        const loudBtn = document.getElementById('preset-loud');
+        if (loudBtn) {
+            loudBtn.addEventListener('click', () => {
+                this.applyPreset({ master: 100, sounds: 100 });
+            });
+        }
+        
+        // Reset preset
+        const resetBtn = document.getElementById('preset-reset');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', () => {
+                this.applyPreset({ master: 100, sounds: 80 });
+            });
+        }
+    }
+    
+    /**
+     * Apply a volume preset
+     */
+    applyPreset(preset) {
+        // Update master volume
+        const masterSlider = document.getElementById('master-volume');
+        if (masterSlider) {
+            masterSlider.value = preset.master;
+            this.game.audio.setMasterVolume(preset.master / 100);
+            const masterDisplay = document.getElementById('master-volume-val');
+            if (masterDisplay) {
+                masterDisplay.textContent = `${preset.master}%`;
+            }
+        }
+        
+        // Update all sound sliders
+        const soundSliders = document.querySelectorAll('[id^="sfx-"]');
+        soundSliders.forEach(slider => {
+            slider.value = preset.sounds;
+            const parent = slider.closest('.sound-control');
+            if (parent) {
+                const display = parent.querySelector('.vol-display');
+                if (display) {
+                    display.textContent = `${preset.sounds}%`;
+                }
+            }
+        });
+        
+        // Apply to audio manager
+        const soundMappings = ['fire', 'peg', 'bumper', 'target', 'jackpotTrigger', 'reelSpin', 'jackpotWin', 'drain', 'flipper'];
+        soundMappings.forEach(sound => {
+            this.game.audio.setSoundVolume(sound, preset.sounds / 100);
+        });
+    }
+    
+    /**
+     * Setup test sound buttons
+     */
+    setupTestButtons() {
+        const testButtons = document.querySelectorAll('.test-btn');
+        testButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const soundName = btn.getAttribute('data-sound');
+                if (soundName) {
+                    this.game.audio.playSound(soundName);
+                }
+            });
+        });
     }
 
     /**

@@ -26,7 +26,7 @@ export class Cannon {
     }
 
     /**
-     * Create cannon visuals
+     * Create cannon visuals - positioned at bottom-right, shooting upward
      */
     create() {
         const position = CONFIG.CANNON.POSITION;
@@ -36,32 +36,32 @@ export class Cannon {
         this.barrelGroup.position.set(position.x, position.y, position.z + 0.5);
         
         // Cannon base
-        const baseGeometry = new THREE.CylinderGeometry(0.8, 1, 0.5, 16);
+        const baseGeometry = new THREE.CylinderGeometry(0.6, 0.8, 0.4, 16);
         const baseMaterial = this.game.renderer.createMaterial(CONFIG.MATERIALS.CANNON);
         this.base = new THREE.Mesh(baseGeometry, baseMaterial);
         this.base.rotation.x = Math.PI / 2;
-        this.base.position.z = -0.25;
+        this.base.position.z = -0.2;
         this.base.castShadow = true;
         this.barrelGroup.add(this.base);
         
-        // Cannon barrel
-        const barrelGeometry = new THREE.CylinderGeometry(0.35, 0.4, 1.5, 16);
+        // Cannon barrel - pointing upward
+        const barrelGeometry = new THREE.CylinderGeometry(0.25, 0.3, 1.2, 16);
         const barrelMaterial = this.game.renderer.createMaterial({
             ...CONFIG.MATERIALS.CANNON,
             color: 0x555555
         });
         this.barrel = new THREE.Mesh(barrelGeometry, barrelMaterial);
-        this.barrel.position.y = -0.3;
-        this.barrel.rotation.x = Math.PI / 2;
+        this.barrel.position.y = 0.6; // Positioned upward
+        this.barrel.rotation.x = 0; // Pointing straight up
         this.barrel.castShadow = true;
         this.barrelGroup.add(this.barrel);
         
         // Barrel opening (darker inside)
-        const openingGeometry = new THREE.CircleGeometry(0.3, 16);
+        const openingGeometry = new THREE.CircleGeometry(0.2, 16);
         const openingMaterial = new THREE.MeshBasicMaterial({ color: 0x111111 });
         const opening = new THREE.Mesh(openingGeometry, openingMaterial);
-        opening.position.set(0, -1, 0);
-        opening.rotation.x = Math.PI / 2;
+        opening.position.set(0, 0.6, 0);
+        opening.rotation.x = -Math.PI / 2;
         this.barrel.add(opening);
         
         // Add decorative rings
@@ -72,14 +72,14 @@ export class Cannon {
         // Create power indicator light
         this.createPowerIndicator();
         
-        console.log('Cannon created');
+        console.log('Cannon created at bottom position');
     }
 
     /**
      * Add decorative rings to barrel
      */
     addDecorativeRings() {
-        const ringGeometry = new THREE.TorusGeometry(0.42, 0.05, 8, 24);
+        const ringGeometry = new THREE.TorusGeometry(0.32, 0.04, 8, 24);
         const ringMaterial = new THREE.MeshStandardMaterial({
             color: 0x888888,
             metalness: 0.8,
@@ -88,7 +88,7 @@ export class Cannon {
         
         for (let i = 0; i < 3; i++) {
             const ring = new THREE.Mesh(ringGeometry, ringMaterial);
-            ring.position.y = -0.3 + i * 0.4;
+            ring.position.y = 0.2 + i * 0.3;
             ring.rotation.x = Math.PI / 2;
             this.barrel.add(ring);
         }
@@ -212,6 +212,7 @@ export class Cannon {
 
     /**
      * Calculate launch velocity based on power and orientation
+     * Now shoots UPWARD from bottom of playfield
      */
     calculateLaunchVelocity(power) {
         const baseSpeed = power * CONFIG.CANNON.LAUNCH_VELOCITY_SCALE * 100;
@@ -220,33 +221,33 @@ export class Cannon {
         const rotationAngle = this.rotation * CONFIG.CANNON.ROTATION.MAX;
         const elevationAngle = this.elevation * CONFIG.CANNON.ELEVATION.MAX;
         
-        // Velocity components
-        const vx = Math.sin(rotationAngle) * baseSpeed * 0.3;
-        const vy = -baseSpeed; // Downward (into playfield)
-        const vz = Math.sin(elevationAngle) * baseSpeed * 0.2;
+        // Velocity components - shooting UPWARD (positive Y)
+        const vx = Math.sin(rotationAngle) * baseSpeed * 0.2; // Slight horizontal bias
+        const vy = baseSpeed; // UPWARD (positive, into playfield top)
+        const vz = Math.sin(elevationAngle) * baseSpeed * 0.1;
         
         // Add slight randomness based on GPU noise
         const noise = this.game.getGPUNoiseRNG();
-        const noiseAmount = 0.1;
+        const noiseAmount = 0.08;
         
         return {
             x: vx + (noise - 0.5) * noiseAmount * baseSpeed,
             y: vy,
-            z: vz + (noise - 0.5) * noiseAmount * baseSpeed * 0.5
+            z: vz + (noise - 0.5) * noiseAmount * baseSpeed * 0.3
         };
     }
 
     /**
-     * Get spawn position for new ball
+     * Get spawn position for new ball - from cannon at bottom
      */
     getSpawnPosition() {
         const cannonPos = CONFIG.CANNON.POSITION;
-        const offset = 1.5; // Distance from cannon center
+        const offset = 1.0; // Distance from cannon center
         
         return {
-            x: cannonPos.x + this.rotation * 1,
-            y: cannonPos.y - offset,
-            z: cannonPos.z + 0.5
+            x: cannonPos.x + this.rotation * 0.5,
+            y: cannonPos.y + offset, // Slightly above cannon
+            z: cannonPos.z + 0.3
         };
     }
 
