@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Neon Slot Machine</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #050505;
+            font-family: 'Courier New', Courier, monospace;
+            user-select: none;
+        }
+
+        /* HUD / UI Styles */
+        #ui-container {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            text-align: center;
+            z-index: 10;
+            pointer-events: none; /* Let clicks pass through to 3D canvas */
+        }
+
+        .hud-panel {
+            background: linear-gradient(to bottom, #2b2b2b, #111);
+            border: 3px solid #d4af37; /* Gold border */
+            border-radius: 15px;
+            padding: 20px;
+            display: inline-block;
+            pointer-events: auto;
+            box-shadow: 
+                0 0 15px rgba(212, 175, 55, 0.5),
+                inset 0 0 20px rgba(0,0,0,0.8);
+        }
+
+        .btn {
+            background: linear-gradient(180deg, #ff4444, #990000);
+            border: 2px solid #fff;
+            color: white;
+            padding: 15px 40px;
+            font-size: 24px;
+            font-weight: 900;
+            border-radius: 50px;
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: 0 6px 0 #660000, 0 10px 10px rgba(0,0,0,0.5);
+            transition: all 0.1s;
+            margin: 0 15px;
+            text-shadow: 0 2px 2px rgba(0,0,0,0.5);
+        }
+
+        .btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #660000, 0 2px 5px rgba(0,0,0,0.5);
+        }
+
+        .btn:disabled {
+            background: #444;
+            box-shadow: none;
+            color: #888;
+            border-color: #666;
+            cursor: not-allowed;
+            transform: translateY(4px);
+        }
+
+        .btn-coin {
+            background: linear-gradient(180deg, #ffd700, #b8860b);
+            box-shadow: 0 6px 0 #8b6508, 0 10px 10px rgba(0,0,0,0.5);
+            color: #4a3c00;
+            border-color: #ffeba0;
+        }
+
+        .btn-coin:active {
+             box-shadow: 0 2px 0 #8b6508, 0 2px 5px rgba(0,0,0,0.5);
+        }
+
+        .display-label {
+            color: #d4af37;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .display-box {
+            background: #000;
+            color: #ff3333; /* LED Red */
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            font-size: 32px;
+            padding: 10px 25px;
+            border: 2px solid #444;
+            border-radius: 8px;
+            margin: 0 10px 20px 10px;
+            display: inline-block;
+            min-width: 80px;
+            text-shadow: 0 0 8px #ff0000;
+            box-shadow: inset 0 0 10px #000;
+        }
+
+        /* Overlay Messages (Jackpot/Game Over) */
+        #message-overlay {
+            position: absolute;
+            top: 25%;
+            width: 100%;
+            text-align: center;
+            pointer-events: none;
+            font-size: 80px;
+            font-weight: 900;
+            color: #ffd700;
+            text-shadow: 0 0 20px #ff0000, 0 0 40px #ff0000;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 20;
+            transform: scale(0.8);
+        }
+
+        .pop-anim {
+            animation: popIn 0.5s forwards, flashAnim 0.5s infinite alternate;
+        }
+
+        @keyframes popIn {
+            to { transform: scale(1); }
+        }
+
+        @keyframes flashAnim {
+            from { text-shadow: 0 0 20px #ff0000; }
+            to { text-shadow: 0 0 50px #ffff00; filter: brightness(1.2); }
+        }
+
+        #loading {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            color: #d4af37;
+            font-size: 24px;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loading">Initializing 3D Engine...</div>
+    <div id="message-overlay">JACKPOT!</div>
+
+    <div id="ui-container">
+        <div class="hud-panel">
+            <div style="display:inline-block; vertical-align: top;">
+                <div class="display-label">Credits</div>
+                <div id="credits-display" class="display-box">0</div>
+            </div>
+            
+            <div style="display:inline-block; vertical-align: top;">
+                 <div class="display-label">Win</div>
+                <div id="win-display" class="display-box">0</div>
+            </div>
+
+            <br>
+
+            <button id="btn-coin" class="btn btn-coin" onclick="insertCoin()">Insert Coin</button>
+            <button id="btn-spin" class="btn" onclick="spin()" disabled>SPIN</button>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURATION ---
+        const SYMBOLS = ['7', 'BAR', 'CHERRY', 'BELL', 'DIAMOND', 'LEMON'];
+        const SYMBOL_COLORS = {
+            '7': '#ff0000',
+            'BAR': '#ffffff',
+            'CHERRY': '#ff00aa',
+            'BELL': '#ffd700',
+            'DIAMOND': '#00ffff',
+            'LEMON': '#ccff00'
+        };
+        const REEL_RADIUS = 3;
+        const SEGMENTS = SYMBOLS.length;
+        const SEGMENT_ANGLE = (Math.PI * 2) / SEGMENTS;
+        const COST_PER_SPIN = 10;
+        
+        let scene, camera, renderer;
+        let reels = [];
+        let running = false;
+        let credits = 0;
+        let coinMesh; 
+        let coinSlotTarget;
+        
+        // --- 1. PROCEDURAL TEXTURE GENERATION ---
+        function createSymbolTexture() {
+            const canvas = document.createElement('canvas');
+            // FIX: Swap dimensions to map symbols along the circumference (U-axis)
+            canvas.width = 2048; 
+            canvas.height = 512; 
+            const ctx = canvas.getContext('2d');
+            
+            // 1a. Background (Metallic Strip - horizontal gradient now vertical on texture)
+            // Since we are rotating everything, let's keep the gradient simple for the background
+            const grad = ctx.createLinearGradient(0, 0, 0, 512); 
+            grad.addColorStop(0, '#aaa');
+            grad.addColorStop(0.2, '#fff');
+            grad.addColorStop(0.5, '#eee');
+            grad.addColorStop(0.8, '#fff');
+            grad.addColorStop(1, '#aaa');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const segmentWidth = canvas.width / SEGMENTS;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            SYMBOLS.forEach((symbol, i) => {
+                const cx = i * segmentWidth + (segmentWidth / 2);
+                const cy = canvas.height / 2;
+                
+                // Divider Line (Vertical on canvas = Horizontal on Reel)
+                ctx.strokeStyle = '#444';
+                ctx.lineWidth = 6;
+                ctx.beginPath();
+                ctx.moveTo(i * segmentWidth, 0);
+                ctx.lineTo(i * segmentWidth, canvas.height);
+                ctx.stroke();
+
+                // FIX: Rotate context to draw symbols sideways
+                // This ensures that when mapped to the reel (which is rotated 90deg),
+                // the symbols appear upright to the camera.
+                ctx.save();
+                ctx.translate(cx, cy);
+                ctx.rotate(-Math.PI / 2); // Rotate -90 degrees
+
+                // Draw Symbol Graphics (Now drawing relative to center 0,0)
+                ctx.fillStyle = SYMBOL_COLORS[symbol];
+                
+                // Glow Effect
+                ctx.shadowColor = 'rgba(0,0,0,0.5)';
+                ctx.shadowBlur = 15;
+                ctx.shadowOffsetX = 5;
+                ctx.shadowOffsetY = 5;
+
+                if (symbol === '7') {
+                    ctx.font = '900 280px "Arial Black", sans-serif';
+                    ctx.fillStyle = '#ff0000';
+                    ctx.strokeStyle = '#fff';
+                    ctx.lineWidth = 5;
+                    ctx.strokeText('7', 0, 0);
+                    ctx.fillText('7', 0, 0);
+                } 
+                else if (symbol === 'BAR') {
+                    // Black rounded rect with text
+                    ctx.fillStyle = '#111';
+                    // Coordinates adjusted for centered rotation
+                    ctx.roundRect(-176, -70, 352, 140, 20);
+                    ctx.fill();
+                    
+                    ctx.shadowColor = 'transparent';
+                    ctx.fillStyle = '#fff';
+                    ctx.font = '900 100px Arial';
+                    ctx.fillText('BAR', 0, 5);
+                } 
+                else if (symbol === 'CHERRY') {
+                    ctx.fillStyle = '#d00';
+                    ctx.beginPath();
+                    ctx.arc(-50, 30, 60, 0, Math.PI*2);
+                    ctx.arc(50, 30, 60, 0, Math.PI*2);
+                    ctx.fill();
+                    
+                    // Stems
+                    ctx.strokeStyle = '#0a0';
+                    ctx.lineWidth = 15;
+                    ctx.beginPath();
+                    ctx.moveTo(-50, 30);
+                    ctx.quadraticCurveTo(0, -100, 80, -120);
+                    ctx.moveTo(50, 30);
+                    ctx.quadraticCurveTo(20, -100, 80, -120);
+                    ctx.stroke();
+                }
+                else if (symbol === 'DIAMOND') {
+                    ctx.fillStyle = '#0ff';
+                    ctx.beginPath();
+                    ctx.moveTo(0, -100);
+                    ctx.lineTo(80, 0);
+                    ctx.lineTo(0, 100);
+                    ctx.lineTo(-80, 0);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+                }
+                else {
+                    ctx.font = 'bold 180px Arial';
+                    ctx.fillText(symbol, 0, 0);
+                }
+                
+                ctx.restore(); // Restore context for next symbol
+                ctx.shadowColor = 'transparent';
+            });
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+            // Adjust offset if needed to align the first symbol exactly center
+            // By default, texture starts at U=0. 
+            // We want the symbol center to be at the front.
+            // Symbol 0 is at 0..segmentWidth. Center is segmentWidth/2.
+            // This might need minor calibration visually, but usually 0 is fine.
+            return texture;
+        }
+
+        function createCoinTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 128;
+            canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+            
+            // Gold Gradient
+            const grad = ctx.createRadialGradient(64,64, 10, 64,64, 60);
+            grad.addColorStop(0, '#fff');
+            grad.addColorStop(0.2, '#ffd700');
+            grad.addColorStop(1, '#b8860b');
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(64, 64, 60, 0, Math.PI*2);
+            ctx.fill();
+            
+            // Detail Ring
+            ctx.strokeStyle = '#b8860b';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.arc(64, 64, 50, 0, Math.PI*2);
+            ctx.stroke();
+
+            // '$' Sign
+            ctx.fillStyle = '#b8860b';
+            ctx.font = 'bold 80px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('$', 64, 68);
+            
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        // --- 2. 3D SCENE SETUP ---
+        function init() {
+            document.getElementById('loading').style.display = 'none';
+
+            // Scene
+            scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0x000000, 0.02);
+
+            // Camera
+            camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
+            camera.position.set(0, 0, 22);
+            
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.body.appendChild(renderer.domElement);
+
+            // --- LIGHTING ---
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+            scene.add(ambientLight);
+
+            const spotLight = new THREE.SpotLight(0xfff0dd, 1.2);
+            spotLight.position.set(0, 15, 20);
+            spotLight.angle = 0.6;
+            spotLight.penumbra = 0.3;
+            spotLight.castShadow = true;
+            spotLight.shadow.mapSize.width = 1024;
+            spotLight.shadow.mapSize.height = 1024;
+            scene.add(spotLight);
+
+            const neonLeft = new THREE.PointLight(0xff00cc, 2, 20);
+            neonLeft.position.set(-10, 0, 5);
+            scene.add(neonLeft);
+
+            const neonRight = new THREE.PointLight(0x00ffff, 2, 20);
+            neonRight.position.set(10, 0, 5);
+            scene.add(neonRight);
+
+            // --- MATERIALS ---
+            const cabinetMat = new THREE.MeshStandardMaterial({
+                color: 0x111111,
+                metalness: 0.6,
+                roughness: 0.4
+            });
+
+            const goldMat = new THREE.MeshStandardMaterial({
+                color: 0xffd700,
+                metalness: 1.0,
+                roughness: 0.2,
+                emissive: 0xaa6600,
+                emissiveIntensity: 0.2
+            });
+
+            // --- BUILD MACHINE ---
+            const machineGroup = new THREE.Group();
+            scene.add(machineGroup);
+
+            // Back Casing
+            const casingGeo = new THREE.BoxGeometry(16, 12, 4);
+            const casing = new THREE.Mesh(casingGeo, cabinetMat);
+            casing.position.z = -3;
+            casing.castShadow = true;
+            casing.receiveShadow = true;
+            machineGroup.add(casing);
+
+            // Gold Frame Elements
+            const frameTop = new THREE.Mesh(new THREE.BoxGeometry(17, 1.5, 6), goldMat);
+            frameTop.position.y = 6.5;
+            machineGroup.add(frameTop);
+
+            const frameBottom = new THREE.Mesh(new THREE.BoxGeometry(17, 2, 6), goldMat);
+            frameBottom.position.y = -6.5;
+            frameBottom.receiveShadow = true;
+            machineGroup.add(frameBottom);
+
+            const frameLeft = new THREE.Mesh(new THREE.BoxGeometry(1.5, 15, 6), goldMat);
+            frameLeft.position.x = -8.5;
+            machineGroup.add(frameLeft);
+
+            const frameRight = new THREE.Mesh(new THREE.BoxGeometry(1.5, 15, 6), goldMat);
+            frameRight.position.x = 8.5;
+            machineGroup.add(frameRight);
+
+            // Glass Cover
+            const glassGeo = new THREE.BoxGeometry(15, 11, 0.5);
+            const glassMat = new THREE.MeshPhysicalMaterial({
+                color: 0xffffff,
+                metalness: 0.1,
+                roughness: 0,
+                transmission: 0.9,
+                opacity: 0.3,
+                transparent: true,
+                reflectivity: 1,
+                clearcoat: 1.0
+            });
+            const glass = new THREE.Mesh(glassGeo, glassMat);
+            glass.position.z = 3.5;
+            machineGroup.add(glass);
+
+            // Payline Indicator
+            const lineGeo = new THREE.BoxGeometry(15.5, 0.08, 0.1);
+            const lineMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+            const line = new THREE.Mesh(lineGeo, lineMat);
+            line.position.z = 3.6; 
+            machineGroup.add(line);
+
+
+            // --- REELS ---
+            const reelTexture = createSymbolTexture();
+            const reelGeo = new THREE.CylinderGeometry(REEL_RADIUS, REEL_RADIUS, 4, 48, 1, true);
+            // Rotate geometry so it spins on X axis (Horizontal)
+            reelGeo.rotateZ(Math.PI / 2); 
+            
+            const reelMat = new THREE.MeshStandardMaterial({ 
+                map: reelTexture, 
+                roughness: 0.3,
+                metalness: 0.4
+            });
+
+            for (let i = 0; i < 3; i++) {
+                const reel = new THREE.Mesh(reelGeo, reelMat);
+                // Position reels: Left(-5), Center(0), Right(+5)
+                reel.position.x = (i - 1) * 5;
+                reel.rotation.x = 0; 
+                
+                reel.userData = { 
+                    speed: 0, 
+                    isStopping: false, 
+                    finalAngle: 0 
+                };
+                
+                reels.push(reel);
+                machineGroup.add(reel);
+            }
+
+            // --- COIN MECHANISM ---
+            const slotFrameGeo = new THREE.BoxGeometry(1, 2, 0.2);
+            const slotFrameMat = new THREE.MeshStandardMaterial({ color: 0x333, metalness: 0.8 });
+            const slotFrame = new THREE.Mesh(slotFrameGeo, slotFrameMat);
+            slotFrame.position.set(6, -6, 3.6); 
+            slotFrame.rotation.z = 0.2; 
+            machineGroup.add(slotFrame);
+
+            const slotHoleGeo = new THREE.PlaneGeometry(0.2, 1.5);
+            const slotHoleMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+            const slotHole = new THREE.Mesh(slotHoleGeo, slotHoleMat);
+            slotHole.position.set(0, 0, 0.11); 
+            slotFrame.add(slotHole);
+
+            coinSlotTarget = new THREE.Vector3();
+            slotHole.getWorldPosition(coinSlotTarget);
+
+            const coinGeo = new THREE.CylinderGeometry(0.6, 0.6, 0.1, 32);
+            coinGeo.rotateX(Math.PI / 2); 
+            
+            const coinMat = new THREE.MeshStandardMaterial({ 
+                color: 0xffd700, 
+                metalness: 1.0, 
+                roughness: 0.2,
+                map: createCoinTexture()
+            }); 
+            
+            coinMesh = new THREE.Mesh(coinGeo, coinMat);
+            coinMesh.visible = false;
+            scene.add(coinMesh);
+
+            animate();
+        }
+
+        // --- ANIMATION & LOGIC ---
+        
+        function insertCoin() {
+            const btn = document.getElementById('btn-coin');
+            if (btn.disabled) return;
+            btn.disabled = true;
+
+            coinMesh.visible = true;
+            const startPos = new THREE.Vector3(8, -10, 8); 
+            const midPos = coinSlotTarget.clone();
+            midPos.z += 0.5; 
+            midPos.x += 0.2; 
+            midPos.y += 0.2;
+            const endPos = coinSlotTarget.clone();
+            endPos.z -= 1.0; 
+            
+            coinMesh.position.copy(startPos);
+            
+            const startTime = Date.now();
+            const duration = 1000; 
+
+            function animateCoinFrame() {
+                const now = Date.now();
+                const progress = Math.min((now - startTime) / duration, 1);
+                const ease = progress < 0.5 ? 2 * progress * progress : -1 + (4 - 2 * progress) * progress;
+
+                if (progress < 0.6) {
+                    const p = progress / 0.6;
+                    coinMesh.position.lerpVectors(startPos, midPos, p);
+                    coinMesh.rotation.set(0, 0, 0.2 * p); 
+                } else {
+                    const p = (progress - 0.6) / 0.4;
+                    coinMesh.position.lerpVectors(midPos, endPos, p);
+                    coinMesh.scale.setScalar(1 - (p * 0.2));
+                }
+
+                if (progress < 1) {
+                    requestAnimationFrame(animateCoinFrame);
+                } else {
+                    coinMesh.visible = false;
+                    coinMesh.scale.setScalar(1); 
+                    credits += 10;
+                    updateUI();
+                    btn.disabled = false;
+                }
+            }
+            animateCoinFrame();
+        }
+
+        function updateUI() {
+            document.getElementById('credits-display').innerText = credits;
+            const spinBtn = document.getElementById('btn-spin');
+            if (credits >= COST_PER_SPIN && !running) {
+                spinBtn.disabled = false;
+            } else {
+                spinBtn.disabled = true;
+            }
+        }
+
+        function spin() {
+            if (running || credits < COST_PER_SPIN) return;
+            
+            credits -= COST_PER_SPIN;
+            updateUI();
+            
+            const overlay = document.getElementById('message-overlay');
+            overlay.style.opacity = '0';
+            overlay.classList.remove('pop-anim');
+            document.getElementById('win-display').innerText = "0";
+
+            running = true;
+            document.getElementById('btn-spin').disabled = true;
+            document.getElementById('btn-coin').disabled = true;
+
+            reels.forEach((reel, i) => {
+                reel.userData.speed = 0.4 + (Math.random() * 0.2);
+                reel.userData.isStopping = false;
+                setTimeout(() => {
+                    prepareStopReel(i);
+                }, 1500 + (i * 1000));
+            });
+        }
+
+        function prepareStopReel(index) {
+            const reel = reels[index];
+            reel.userData.isStopping = true;
+            
+            const randomIndex = Math.floor(Math.random() * SEGMENTS);
+            
+            // Adjust calculation for horizontal wrapping texture (Mapping U to Angle)
+            // U goes 0 to 1. Angle goes 0 to 2PI.
+            // If we stop at angle X, we see symbol at U = X / 2PI.
+            // Symbol i is at U = i / SEGMENTS.
+            // So TargetAngle = i * SEGMENT_ANGLE.
+            // HOWEVER, we need to account for rotation direction.
+            // Reel rotates +X. Texture wraps +U.
+            const targetSymbolAngle = randomIndex * SEGMENT_ANGLE;
+            
+            const currentRot = reel.rotation.x;
+            const minSpins = Math.PI * 4; 
+            
+            let targetRot = targetSymbolAngle;
+            while (targetRot < currentRot + minSpins) {
+                targetRot += Math.PI * 2;
+            }
+            
+            reel.userData.finalAngle = targetRot;
+        }
+
+        function checkWin() {
+            running = false;
+            document.getElementById('btn-coin').disabled = false;
+            
+            const results = reels.map(reel => {
+                let angle = reel.rotation.x % (Math.PI * 2);
+                if (angle < 0) angle += Math.PI * 2;
+                
+                // Index calculation:
+                // If angle is 0, we are at U=0 (Symbol 0).
+                // If angle increases, U increases.
+                // We just need to ensure we round to nearest segment.
+                let index = Math.round(angle / SEGMENT_ANGLE) % SEGMENTS;
+                return SYMBOLS[index];
+            });
+
+            const [s1, s2, s3] = results;
+            let winAmount = 0;
+            let message = "";
+
+            if (s1 === s2 && s2 === s3) {
+                if (s1 === '7') winAmount = 500;
+                else if (s1 === 'BAR') winAmount = 200;
+                else winAmount = 100;
+                message = "JACKPOT!";
+            } else if (s1 === s2 || s2 === s3 || s1 === s3) {
+                winAmount = 20;
+                message = "WIN!";
+            }
+
+            if (winAmount > 0) {
+                credits += winAmount;
+                document.getElementById('win-display').innerText = winAmount;
+                const overlay = document.getElementById('message-overlay');
+                overlay.innerText = message + " +" + winAmount;
+                overlay.style.opacity = '1';
+                overlay.classList.add('pop-anim');
+            } else {
+                if(credits === 0) {
+                    const overlay = document.getElementById('message-overlay');
+                    overlay.innerText = "GAME OVER";
+                    overlay.style.color = "red";
+                    overlay.style.opacity = '1';
+                }
+            }
+            updateUI();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            reels.forEach((reel, i) => {
+                if (running) {
+                    if (!reel.userData.isStopping) {
+                        if (reel.userData.speed < 0.8) reel.userData.speed += 0.02;
+                        reel.rotation.x += reel.userData.speed;
+                    } else {
+                        const remaining = reel.userData.finalAngle - reel.rotation.x;
+                        if (remaining > 0.05) {
+                            const step = remaining * 0.1;
+                            reel.rotation.x += Math.max(step, 0.05);
+                        } else {
+                            reel.rotation.x = reel.userData.finalAngle;
+                            if (i === 2 && running && 
+                                reels[0].rotation.x === reels[0].userData.finalAngle && 
+                                reels[1].rotation.x === reels[1].userData.finalAngle) {
+                                setTimeout(checkWin, 100);
+                            }
+                        }
+                    }
+                }
+            });
+
+            const time = Date.now() * 0.002;
+            scene.children.forEach(obj => {
+                if (obj.isPointLight) {
+                    obj.intensity = 2 + Math.sin(time) * 0.5;
+                }
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        init();
+
+    </script>
+</body>
+</html>
