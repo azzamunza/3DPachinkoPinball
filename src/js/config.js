@@ -11,15 +11,15 @@ export const CONFIG = {
     // Physics Constants
     PHYSICS: {
         GRAVITY: -9.81,
-        PLAYFIELD_TILT: 6.5 * (Math.PI / 180), // 6.5 degrees in radians
+        PLAYFIELD_TILT: -6.5 * (Math.PI / 180), // -6.5 degrees in radians (tilted BACKWARD so balls roll down toward player)
         SUBSTEPS: 8,
         CCD_ENABLED: true,
         SOLVER_ITERATIONS: 12,
         
         // Ball Properties
         BALL: {
-            RADIUS: 0.3,
-            MASS: 1.0,
+            RADIUS: 0.1, // Reduced to 1/3 of original size (was 0.3)
+            MASS: 0.33, // Reduced proportionally
             FRICTION: 0.05,
             LINEAR_DAMPING: 0.08,
             ANGULAR_DAMPING: 0.25,
@@ -46,16 +46,16 @@ export const CONFIG = {
         HEIGHT: 20,
         DEPTH: 2,
         
-        // Peg Configuration
+        // Peg Configuration - Authentic Pachinko Style
         PEGS: {
-            COUNT: 50,
-            RADIUS: 0.15,
-            HEIGHT: 0.5,
+            COUNT: 120, // More pegs for authentic Pachinko feel
+            RADIUS: 0.08, // Smaller pegs (reduced from 0.15)
+            HEIGHT: 0.4,
             RESTITUTION: 0.88,
-            ROWS: 8,
-            HORIZONTAL_SPACING: 1.2,
-            VERTICAL_SPACING: 1.2,
-            STAGGER_OFFSET: 0.6
+            ROWS: 15,
+            HORIZONTAL_SPACING: 0.8, // Tighter spacing
+            VERTICAL_SPACING: 0.9,
+            STAGGER_OFFSET: 0.4
         },
         
         // Pop-Bumpers
@@ -102,12 +102,45 @@ export const CONFIG = {
             LEFT: { x: -5, y: -9 },
             RIGHT: { x: 5, y: -9 },
             CENTER: { x: 0, y: -9 }
+        },
+        
+        // Authentic Pachinko Features
+        PACHINKO: {
+            // Start Pocket - Ball entry point at top
+            START_POCKET: {
+                POSITION: { x: -5, y: 8, z: 0 },
+                WIDTH: 1.5,
+                POINTS: 0
+            },
+            // V-Pockets - Special winning pockets
+            V_POCKETS: [
+                { x: 0, y: -5, points: 500, freeBalls: 3, label: 'V-POCKET' },
+                { x: -3, y: -4, points: 200, freeBalls: 1, label: 'BONUS' },
+                { x: 3, y: -4, points: 200, freeBalls: 1, label: 'BONUS' }
+            ],
+            // Tulip Gates - Opening/Closing mechanical gates
+            TULIP_GATES: [
+                { x: -2, y: 2, openTime: 2.0, closeTime: 3.0 },
+                { x: 2, y: 2, openTime: 2.0, closeTime: 3.0 }
+            ],
+            // Feature Zones - Trigger special events
+            FEATURE_ZONES: [
+                { x: -4, y: 0, type: 'MULTIPLIER', value: 2 },
+                { x: 4, y: 0, type: 'MULTIPLIER', value: 2 },
+                { x: 0, y: 3, type: 'FEVER', duration: 10 }
+            ],
+            // Fever Mode - Special high-scoring mode
+            FEVER_MODE: {
+                DURATION: 15, // seconds
+                MULTIPLIER: 5,
+                BALL_BONUS: 10
+            }
         }
     },
     
-    // Cannon Configuration
+    // Cannon Configuration - At BOTTOM, shooting UPWARD
     CANNON: {
-        POSITION: { x: 0, y: 9, z: 0 },
+        POSITION: { x: 5.5, y: -8, z: 0 }, // Bottom-right position (like real Pachinko)
         POWER: {
             MIN: 0,
             MAX: 100,
@@ -125,7 +158,7 @@ export const CONFIG = {
             DEFAULT: 1.0,
             RAPID_FIRE: 0.4
         },
-        LAUNCH_VELOCITY_SCALE: 0.3
+        LAUNCH_VELOCITY_SCALE: 0.35 // Slightly higher for upward launch
     },
     
     // Flipper Configuration

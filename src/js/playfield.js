@@ -1,6 +1,7 @@
 /**
  * Playfield Module
  * Creates the game board with pegs, bumpers, ramps, walls, and funnel
+ * Now includes authentic Pachinko features: V-Pockets, Tulip Gates, Feature Zones
  */
 
 import * as THREE from 'three';
@@ -17,6 +18,11 @@ export class Playfield {
         this.targets = [];
         this.walls = [];
         this.ramps = [];
+        
+        // New Pachinko features
+        this.vPockets = [];
+        this.tulipGates = [];
+        this.featureZones = [];
         
         // Visual meshes
         this.meshes = [];
@@ -41,8 +47,12 @@ export class Playfield {
         this.createFunnel();
         this.createDrains();
         this.createFloor();
+        this.createVPockets();      // New: Authentic Pachinko V-Pockets
+        this.createTulipGates();    // New: Mechanical tulip gates
+        this.createFeatureZones();  // New: Special feature zones
+        this.createStartPocket();   // New: Ball entry guide
         
-        console.log('Playfield created');
+        console.log('Playfield created with authentic Pachinko features');
     }
 
     /**
@@ -206,36 +216,134 @@ export class Playfield {
     }
 
     /**
-     * Create peg field (Pachinko style)
+     * Create peg field - Authentic Pachinko style with curved arrangements
+     * Based on reference images: curved rows, denser packing, and feature zones
      */
     createPegs() {
         const cfg = CONFIG.PLAYFIELD.PEGS;
         const material = this.game.renderer.createMaterial(CONFIG.MATERIALS.PEG);
         
-        // Create staggered grid of pegs
-        const startY = 6; // Start from upper area
-        const endY = -3;  // End before flipper area
-        const spacing = cfg.VERTICAL_SPACING;
+        // Create golden/brass colored pegs for authentic look
+        const goldenMaterial = this.game.renderer.createMaterial({
+            ...CONFIG.MATERIALS.PEG,
+            color: 0xd4a84b, // Golden brass color
+            metalness: 0.7,
+            roughness: 0.3
+        });
+        
+        // === UPPER CURVED ZONE (Entry distribution area) ===
+        // Create curved rows at the top like authentic Pachinko
+        this.createCurvedPegRow(7.5, 4.5, 12, goldenMaterial);  // Top arc
+        this.createCurvedPegRow(6.5, 4.0, 14, goldenMaterial);  // Second arc
+        this.createCurvedPegRow(5.5, 3.5, 16, goldenMaterial);  // Third arc
+        
+        // === MIDDLE DENSE ZONE (Main playing field) ===
+        // Staggered grid pattern - denser than original
+        const startY = 4.5;
+        const endY = -2.5;
+        const vSpacing = cfg.VERTICAL_SPACING;
         const hSpacing = cfg.HORIZONTAL_SPACING;
-        const stagger = cfg.STAGGER_OFFSET;
+        
+        // Skip zone configuration for feature areas
+        const SKIP_ZONES = {
+            // Center area for feature zones
+            CENTER_FEATURE: { xRadius: 0.8, yMin: -1, yMax: 2 },
+            // Main V-pocket area
+            V_POCKET_CENTER: { xRadius: 0.6, yMax: -3 },
+            // Side bonus pocket areas
+            V_POCKET_LEFT: { xCenter: -3, xRadius: 0.5, yMin: -5, yMax: -3 },
+            V_POCKET_RIGHT: { xCenter: 3, xRadius: 0.5, yMin: -5, yMax: -3 }
+        };
         
         let row = 0;
-        for (let y = startY; y > endY; y -= spacing) {
+        for (let y = startY; y > endY; y -= vSpacing) {
             const isStaggered = row % 2 === 1;
-            const offset = isStaggered ? stagger : 0;
-            const numPegs = isStaggered ? 8 : 9;
-            const rowWidth = (numPegs - 1) * hSpacing;
+            const offset = isStaggered ? hSpacing / 2 : 0;
+            
+            // Vary row width based on position (narrower at bottom for funnel effect)
+            const rowProgress = (startY - y) / (startY - endY);
+            const maxPegs = Math.floor(12 - rowProgress * 3); // 12 at top, 9 at bottom
+            const rowWidth = (maxPegs - 1) * hSpacing;
             const startX = -rowWidth / 2 + offset;
             
-            for (let i = 0; i < numPegs; i++) {
+            for (let i = 0; i < maxPegs; i++) {
                 const x = startX + i * hSpacing;
-                this.createPeg({ x, y, z: 0 }, material);
+                
+                // Skip center area for feature zones
+                if (Math.abs(x) < SKIP_ZONES.CENTER_FEATURE.xRadius && 
+                    y < SKIP_ZONES.CENTER_FEATURE.yMax && 
+                    y > SKIP_ZONES.CENTER_FEATURE.yMin) continue;
+                
+                // Skip areas for V-pockets
+                if (Math.abs(x) < SKIP_ZONES.V_POCKET_CENTER.xRadius && 
+                    y < SKIP_ZONES.V_POCKET_CENTER.yMax) continue;
+                if (Math.abs(x - SKIP_ZONES.V_POCKET_RIGHT.xCenter) < SKIP_ZONES.V_POCKET_RIGHT.xRadius && 
+                    y < SKIP_ZONES.V_POCKET_RIGHT.yMax && 
+                    y > SKIP_ZONES.V_POCKET_RIGHT.yMin) continue;
+                if (Math.abs(x - SKIP_ZONES.V_POCKET_LEFT.xCenter) < SKIP_ZONES.V_POCKET_LEFT.xRadius && 
+                    y < SKIP_ZONES.V_POCKET_LEFT.yMax && 
+                    y > SKIP_ZONES.V_POCKET_LEFT.yMin) continue;
+                
+                this.createPeg({ x, y, z: 0 }, goldenMaterial);
             }
-            
             row++;
         }
         
-        console.log(`Created ${this.pegs.length} pegs`);
+        // === SIDE CURVED CHANNELS ===
+        // Left curved channel pegs
+        this.createCurvedChannelPegs(-4.5, 3, -3.5, -2, 8, goldenMaterial, 'left');
+        // Right curved channel pegs
+        this.createCurvedChannelPegs(4.5, 3, 3.5, -2, 8, goldenMaterial, 'right');
+        
+        // === LOWER FUNNEL ZONE ===
+        // Guide pegs toward center pockets
+        this.createFunnelPegs(-3.5, -3, goldenMaterial);
+        this.createFunnelPegs(3.5, -3, goldenMaterial);
+        
+        console.log(`Created ${this.pegs.length} pegs (authentic Pachinko layout)`);
+    }
+    
+    /**
+     * Create a curved row of pegs (arc shape)
+     */
+    createCurvedPegRow(centerY, radius, numPegs, material) {
+        const startAngle = Math.PI * 0.15;
+        const endAngle = Math.PI * 0.85;
+        const angleStep = (endAngle - startAngle) / (numPegs - 1);
+        
+        for (let i = 0; i < numPegs; i++) {
+            const angle = startAngle + i * angleStep;
+            const x = Math.cos(angle) * radius;
+            const y = centerY - Math.sin(angle) * (radius * 0.3);
+            this.createPeg({ x, y, z: 0 }, material);
+        }
+    }
+    
+    /**
+     * Create curved channel pegs on sides
+     */
+    createCurvedChannelPegs(startX, startY, endX, endY, count, material, side) {
+        for (let i = 0; i < count; i++) {
+            const t = i / (count - 1);
+            const x = startX + (endX - startX) * t;
+            const y = startY + (endY - startY) * t;
+            // Add slight curve
+            const curveOffset = Math.sin(t * Math.PI) * (side === 'left' ? 0.3 : -0.3);
+            this.createPeg({ x: x + curveOffset, y, z: 0 }, material);
+        }
+    }
+    
+    /**
+     * Create funnel-shaped peg arrangements
+     */
+    createFunnelPegs(startX, startY, material) {
+        const direction = startX > 0 ? -1 : 1;
+        // Create V-shape pointing toward center
+        for (let i = 0; i < 4; i++) {
+            const x = startX + direction * i * 0.4;
+            const y = startY - i * 0.4;
+            this.createPeg({ x, y, z: 0 }, material);
+        }
     }
 
     /**
@@ -781,5 +889,376 @@ export class Playfield {
         });
         
         this.game.physics.addBody(body);
+    }
+
+    /**
+     * Create V-Pockets - Special winning pockets (authentic Pachinko feature)
+     */
+    createVPockets() {
+        const vPockets = CONFIG.PLAYFIELD.PACHINKO.V_POCKETS;
+        
+        vPockets.forEach((pocket, index) => {
+            // Visual representation - glowing pocket
+            const pocketGeometry = new THREE.CircleGeometry(0.4, 16);
+            const pocketMaterial = new THREE.MeshStandardMaterial({
+                color: index === 0 ? 0xff0000 : 0xffaa00, // Red for main V-pocket, orange for bonus
+                emissive: index === 0 ? 0xff0000 : 0xffaa00,
+                emissiveIntensity: 0.5,
+                metalness: 0.3,
+                roughness: 0.5
+            });
+            const pocketMesh = new THREE.Mesh(pocketGeometry, pocketMaterial);
+            pocketMesh.position.set(pocket.x, pocket.y, -0.4);
+            this.game.renderer.add(pocketMesh);
+            this.meshes.push(pocketMesh);
+            
+            // Add rim ring
+            const rimGeometry = new THREE.RingGeometry(0.35, 0.45, 24);
+            const rimMaterial = new THREE.MeshStandardMaterial({
+                color: 0xffd700,
+                metalness: 0.8,
+                roughness: 0.2
+            });
+            const rimMesh = new THREE.Mesh(rimGeometry, rimMaterial);
+            rimMesh.position.set(pocket.x, pocket.y, -0.38);
+            this.game.renderer.add(rimMesh);
+            
+            // Physics trigger
+            const shape = new CANNON.Sphere(0.35);
+            const body = new CANNON.Body({
+                mass: 0,
+                shape: shape,
+                position: new CANNON.Vec3(pocket.x, pocket.y, 0),
+                collisionResponse: false
+            });
+            
+            body.userData = { 
+                isVPocket: true, 
+                index, 
+                points: pocket.points, 
+                freeBalls: pocket.freeBalls,
+                label: pocket.label
+            };
+            
+            body.addEventListener('collide', (e) => {
+                this.onVPocketHit(e, pocketMesh, pocket, index);
+            });
+            
+            this.game.physics.addBody(body);
+        });
+        
+        console.log(`Created ${vPockets.length} V-Pockets`);
+    }
+
+    /**
+     * Handle V-Pocket hit
+     */
+    onVPocketHit(event, mesh, pocket, index) {
+        const otherBody = event.body;
+        if (!otherBody.userData || !otherBody.userData.isBall) return;
+        
+        // Award points
+        this.game.score.addScore(pocket.points);
+        
+        // Award free balls
+        if (pocket.freeBalls > 0) {
+            this.game.balls.addBalls(pocket.freeBalls);
+        }
+        
+        // Play special sound
+        this.game.audio.playSound('jackpotTrigger');
+        
+        // Flash effect
+        const originalEmissive = mesh.material.emissiveIntensity;
+        mesh.material.emissiveIntensity = 1.5;
+        setTimeout(() => {
+            mesh.material.emissiveIntensity = originalEmissive;
+        }, 300);
+        
+        // Show notification
+        this.game.ui.showEventNotification(`${pocket.label}! +${pocket.points} +${pocket.freeBalls} BALLS`, '#ff0000');
+    }
+
+    /**
+     * Create Tulip Gates - Mechanical opening/closing gates (authentic Pachinko feature)
+     */
+    createTulipGates() {
+        const tulipGates = CONFIG.PLAYFIELD.PACHINKO.TULIP_GATES;
+        this.tulipGates = [];
+        
+        tulipGates.forEach((gate, index) => {
+            // Create tulip gate visuals (two petals that open/close)
+            const petalGeometry = new THREE.BoxGeometry(0.3, 0.6, 0.2);
+            const petalMaterial = new THREE.MeshStandardMaterial({
+                color: 0x22cc66,
+                metalness: 0.5,
+                roughness: 0.3
+            });
+            
+            // Left petal
+            const leftPetal = new THREE.Mesh(petalGeometry, petalMaterial);
+            leftPetal.position.set(gate.x - 0.25, gate.y, 0);
+            this.game.renderer.add(leftPetal);
+            
+            // Right petal
+            const rightPetal = new THREE.Mesh(petalGeometry, petalMaterial);
+            rightPetal.position.set(gate.x + 0.25, gate.y, 0);
+            this.game.renderer.add(rightPetal);
+            
+            // Base
+            const baseGeometry = new THREE.BoxGeometry(0.8, 0.15, 0.2);
+            const baseMaterial = new THREE.MeshStandardMaterial({
+                color: 0x888888,
+                metalness: 0.6,
+                roughness: 0.3
+            });
+            const baseMesh = new THREE.Mesh(baseGeometry, baseMaterial);
+            baseMesh.position.set(gate.x, gate.y - 0.35, 0);
+            this.game.renderer.add(baseMesh);
+            
+            // Physics trigger for center (when open)
+            const shape = new CANNON.Box(new CANNON.Vec3(0.25, 0.3, 0.2));
+            const body = new CANNON.Body({
+                mass: 0,
+                shape: shape,
+                position: new CANNON.Vec3(gate.x, gate.y, 0),
+                collisionResponse: false
+            });
+            body.userData = { isTulipGate: true, index, isOpen: false };
+            
+            body.addEventListener('collide', (e) => {
+                this.onTulipGateHit(e, index);
+            });
+            
+            this.game.physics.addBody(body);
+            
+            // Store gate for animation
+            this.tulipGates.push({
+                leftPetal,
+                rightPetal,
+                body,
+                isOpen: false,
+                openTimer: 0,
+                closeTimer: 0,
+                config: gate
+            });
+        });
+        
+        // Start tulip gate animation cycle
+        this.startTulipGateCycle();
+        
+        console.log(`Created ${tulipGates.length} Tulip Gates`);
+    }
+
+    /**
+     * Start tulip gate animation cycle
+     */
+    startTulipGateCycle() {
+        setInterval(() => {
+            this.tulipGates.forEach((gate, index) => {
+                // Toggle gate state periodically
+                gate.isOpen = !gate.isOpen;
+                gate.body.userData.isOpen = gate.isOpen;
+                
+                // Animate petals
+                if (gate.isOpen) {
+                    gate.leftPetal.rotation.z = -0.5;
+                    gate.rightPetal.rotation.z = 0.5;
+                    gate.leftPetal.material.emissive.setHex(0x00ff00);
+                    gate.leftPetal.material.emissiveIntensity = 0.3;
+                    gate.rightPetal.material.emissive.setHex(0x00ff00);
+                    gate.rightPetal.material.emissiveIntensity = 0.3;
+                } else {
+                    gate.leftPetal.rotation.z = 0;
+                    gate.rightPetal.rotation.z = 0;
+                    gate.leftPetal.material.emissiveIntensity = 0;
+                    gate.rightPetal.material.emissiveIntensity = 0;
+                }
+            });
+        }, 2500); // Toggle every 2.5 seconds
+    }
+
+    /**
+     * Handle Tulip Gate hit
+     */
+    onTulipGateHit(event, index) {
+        const otherBody = event.body;
+        if (!otherBody.userData || !otherBody.userData.isBall) return;
+        
+        const gate = this.tulipGates[index];
+        if (gate && gate.isOpen) {
+            // Ball went through open gate - bonus!
+            this.game.score.addScore(300);
+            this.game.audio.playSound('target');
+            this.game.ui.showEventNotification('TULIP GATE! +300', '#22cc66');
+        }
+    }
+
+    /**
+     * Create Feature Zones - Special scoring zones (authentic Pachinko feature)
+     */
+    createFeatureZones() {
+        const featureZones = CONFIG.PLAYFIELD.PACHINKO.FEATURE_ZONES;
+        this.featureZones = [];
+        
+        featureZones.forEach((zone, index) => {
+            // Visual representation
+            const zoneGeometry = new THREE.CircleGeometry(0.5, 24);
+            let zoneColor;
+            switch(zone.type) {
+                case 'MULTIPLIER': zoneColor = 0x9900ff; break;
+                case 'FEVER': zoneColor = 0xff00ff; break;
+                default: zoneColor = 0x00ffff;
+            }
+            
+            const zoneMaterial = new THREE.MeshStandardMaterial({
+                color: zoneColor,
+                emissive: zoneColor,
+                emissiveIntensity: 0.4,
+                transparent: true,
+                opacity: 0.7
+            });
+            const zoneMesh = new THREE.Mesh(zoneGeometry, zoneMaterial);
+            zoneMesh.position.set(zone.x, zone.y, -0.45);
+            this.game.renderer.add(zoneMesh);
+            this.meshes.push(zoneMesh);
+            
+            // Physics trigger
+            const shape = new CANNON.Sphere(0.5);
+            const body = new CANNON.Body({
+                mass: 0,
+                shape: shape,
+                position: new CANNON.Vec3(zone.x, zone.y, 0),
+                collisionResponse: false
+            });
+            body.userData = { isFeatureZone: true, index, ...zone };
+            
+            body.addEventListener('collide', (e) => {
+                this.onFeatureZoneHit(e, zoneMesh, zone, index);
+            });
+            
+            this.game.physics.addBody(body);
+            
+            this.featureZones.push({ mesh: zoneMesh, body, config: zone, cooldown: 0 });
+        });
+        
+        console.log(`Created ${featureZones.length} Feature Zones`);
+    }
+
+    /**
+     * Handle Feature Zone hit
+     */
+    onFeatureZoneHit(event, mesh, zone, index) {
+        const otherBody = event.body;
+        if (!otherBody.userData || !otherBody.userData.isBall) return;
+        
+        const featureZone = this.featureZones[index];
+        if (!featureZone || featureZone.cooldown > 0) return;
+        
+        // Set cooldown
+        featureZone.cooldown = 3;
+        setTimeout(() => { featureZone.cooldown = 0; }, 3000);
+        
+        // Handle based on zone type
+        switch(zone.type) {
+            case 'MULTIPLIER':
+                this.game.score.setSessionMultiplier(zone.value);
+                this.game.ui.showEventNotification(`${zone.value}x MULTIPLIER ACTIVE!`, '#9900ff');
+                break;
+            case 'FEVER':
+                this.activateFeverMode(zone.duration);
+                break;
+        }
+        
+        // Visual flash
+        mesh.material.emissiveIntensity = 1.0;
+        setTimeout(() => {
+            mesh.material.emissiveIntensity = 0.4;
+        }, 500);
+        
+        this.game.audio.playSound('allTargets');
+    }
+
+    /**
+     * Activate Fever Mode - Special high-scoring mode
+     */
+    activateFeverMode(duration) {
+        const feverConfig = CONFIG.PLAYFIELD.PACHINKO.FEVER_MODE;
+        
+        // Show fever notification
+        this.game.ui.showEventNotification(`🔥 FEVER MODE! ${feverConfig.MULTIPLIER}x FOR ${duration}s! 🔥`, '#ff00ff');
+        
+        // Set high multiplier
+        this.game.score.setSessionMultiplier(feverConfig.MULTIPLIER);
+        
+        // Award bonus balls
+        this.game.balls.addBalls(feverConfig.BALL_BONUS);
+        
+        // Play fever sound
+        this.game.audio.playSound('jackpotWin');
+        
+        // End fever mode after duration
+        setTimeout(() => {
+            this.game.score.setSessionMultiplier(1);
+            this.game.ui.showEventNotification('Fever Mode Ended', '#ffffff');
+        }, duration * 1000);
+    }
+
+    /**
+     * Create Start Pocket - Ball entry guide at top-left (authentic Pachinko)
+     */
+    createStartPocket() {
+        const startPocket = CONFIG.PLAYFIELD.PACHINKO.START_POCKET;
+        
+        // Visual guide channel
+        const channelGeometry = new THREE.BoxGeometry(startPocket.WIDTH, 3, 0.2);
+        const channelMaterial = new THREE.MeshStandardMaterial({
+            color: 0x333344,
+            metalness: 0.4,
+            roughness: 0.6
+        });
+        const channelMesh = new THREE.Mesh(channelGeometry, channelMaterial);
+        channelMesh.position.set(startPocket.POSITION.x, startPocket.POSITION.y, 0);
+        channelMesh.rotation.z = 0.3; // Slight angle
+        this.game.renderer.add(channelMesh);
+        
+        // Add guide rails
+        const railGeometry = new THREE.BoxGeometry(0.1, 3.2, 0.3);
+        const railMaterial = new THREE.MeshStandardMaterial({
+            color: 0x888888,
+            metalness: 0.7,
+            roughness: 0.3
+        });
+        
+        const leftRail = new THREE.Mesh(railGeometry, railMaterial);
+        leftRail.position.set(startPocket.POSITION.x - startPocket.WIDTH/2 - 0.05, startPocket.POSITION.y, 0.1);
+        leftRail.rotation.z = 0.3;
+        this.game.renderer.add(leftRail);
+        
+        const rightRail = new THREE.Mesh(railGeometry, railMaterial);
+        rightRail.position.set(startPocket.POSITION.x + startPocket.WIDTH/2 + 0.05, startPocket.POSITION.y, 0.1);
+        rightRail.rotation.z = 0.3;
+        this.game.renderer.add(rightRail);
+        
+        // Physics bodies for rails
+        const railBody1 = this.game.physics.createBox(
+            { x: 0.05, y: 1.6, z: 0.15 },
+            0,
+            { x: startPocket.POSITION.x - startPocket.WIDTH/2 - 0.05, y: startPocket.POSITION.y, z: 0.1 },
+            { x: 0, y: 0, z: 0.3 },
+            this.game.physics.materials.wall
+        );
+        this.game.physics.addBody(railBody1);
+        
+        const railBody2 = this.game.physics.createBox(
+            { x: 0.05, y: 1.6, z: 0.15 },
+            0,
+            { x: startPocket.POSITION.x + startPocket.WIDTH/2 + 0.05, y: startPocket.POSITION.y, z: 0.1 },
+            { x: 0, y: 0, z: 0.3 },
+            this.game.physics.materials.wall
+        );
+        this.game.physics.addBody(railBody2);
+        
+        console.log('Start Pocket created');
     }
 }

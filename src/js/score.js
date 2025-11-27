@@ -160,9 +160,9 @@ export class ScoreManager {
      * Set session multiplier
      */
     setSessionMultiplier(multiplier) {
-        if (multiplier > this.sessionMultiplier) {
-            this.sessionMultiplier = multiplier;
-            this.game.ui.updateMultiplier(this.sessionMultiplier);
+        this.sessionMultiplier = multiplier;
+        this.game.ui.updateMultiplier(this.sessionMultiplier);
+        if (multiplier > 1) {
             this.game.ui.showEventNotification(`SESSION ${multiplier}x ACTIVE!`, '#00ffff');
         }
     }

@@ -107,6 +107,132 @@
             </div>
         </div>
         
+        <!-- Settings Button -->
+        <button id="settings-btn" class="settings-toggle">⚙️</button>
+        
+        <!-- Settings Modal -->
+        <div id="settings-modal" class="hidden">
+            <div id="settings-content">
+                <div class="settings-header">
+                    <h2>🎛️ Sound Settings</h2>
+                    <button id="close-settings" class="close-btn">✕</button>
+                </div>
+                
+                <div class="settings-body">
+                    <!-- Master Volume -->
+                    <div class="settings-section">
+                        <h3>Master Volume</h3>
+                        <div class="slider-container">
+                            <input type="range" id="master-volume" min="0" max="100" value="100">
+                            <span id="master-volume-val">100%</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Individual Sound Effects -->
+                    <div class="settings-section">
+                        <h3>Sound Effects</h3>
+                        
+                        <div class="sound-control">
+                            <label>🔫 Ball Fire</label>
+                            <div class="control-row">
+                                <input type="range" id="sfx-fire-vol" min="0" max="100" value="80">
+                                <span class="vol-display">80%</span>
+                                <button class="test-btn" data-sound="fire">▶️</button>
+                            </div>
+                        </div>
+                        
+                        <div class="sound-control">
+                            <label>📍 Peg Hit</label>
+                            <div class="control-row">
+                                <input type="range" id="sfx-peg-vol" min="0" max="100" value="80">
+                                <span class="vol-display">80%</span>
+                                <button class="test-btn" data-sound="peg">▶️</button>
+                            </div>
+                        </div>
+                        
+                        <div class="sound-control">
+                            <label>💥 Bumper Hit</label>
+                            <div class="control-row">
+                                <input type="range" id="sfx-bumper-vol" min="0" max="100" value="80">
+                                <span class="vol-display">80%</span>
+                                <button class="test-btn" data-sound="bumper">▶️</button>
+                            </div>
+                        </div>
+                        
+                        <div class="sound-control">
+                            <label>🎯 Target Hit</label>
+                            <div class="control-row">
+                                <input type="range" id="sfx-target-vol" min="0" max="100" value="80">
+                                <span class="vol-display">80%</span>
+                                <button class="test-btn" data-sound="target">▶️</button>
+                            </div>
+                        </div>
+                        
+                        <div class="sound-control">
+                            <label>🎰 Jackpot Trigger</label>
+                            <div class="control-row">
+                                <input type="range" id="sfx-jackpot-vol" min="0" max="100" value="80">
+                                <span class="vol-display">80%</span>
+                                <button class="test-btn" data-sound="jackpotTrigger">▶️</button>
+                            </div>
+                        </div>
+                        
+                        <div class="sound-control">
+                            <label>🎡 Reel Spin</label>
+                            <div class="control-row">
+                                <input type="range" id="sfx-reel-vol" min="0" max="100" value="80">
+                                <span class="vol-display">80%</span>
+                                <button class="test-btn" data-sound="reelSpin">▶️</button>
+                            </div>
+                        </div>
+                        
+                        <div class="sound-control">
+                            <label>🏆 Jackpot Win</label>
+                            <div class="control-row">
+                                <input type="range" id="sfx-win-vol" min="0" max="100" value="80">
+                                <span class="vol-display">80%</span>
+                                <button class="test-btn" data-sound="jackpotWin">▶️</button>
+                            </div>
+                        </div>
+                        
+                        <div class="sound-control">
+                            <label>🚨 Drain/Loss</label>
+                            <div class="control-row">
+                                <input type="range" id="sfx-drain-vol" min="0" max="100" value="80">
+                                <span class="vol-display">80%</span>
+                                <button class="test-btn" data-sound="drain">▶️</button>
+                            </div>
+                        </div>
+                        
+                        <div class="sound-control">
+                            <label>🎮 Flipper</label>
+                            <div class="control-row">
+                                <input type="range" id="sfx-flipper-vol" min="0" max="100" value="80">
+                                <span class="vol-display">80%</span>
+                                <button class="test-btn" data-sound="flipper">▶️</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Sound Presets -->
+                    <div class="settings-section">
+                        <h3>Presets</h3>
+                        <div class="preset-buttons">
+                            <button id="preset-arcade" class="preset-btn">🕹️ Arcade</button>
+                            <button id="preset-quiet" class="preset-btn">🔇 Quiet</button>
+                            <button id="preset-loud" class="preset-btn">🔊 Loud</button>
+                            <button id="preset-reset" class="preset-btn">↩️ Reset</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Mute Toggle -->
+                    <div class="settings-section mute-section">
+                        <button id="mute-toggle" class="mute-btn">🔊 Sound On</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <!-- Renderer Info -->
         <div id="renderer-info">
             <span id="renderer-type">WebGL 2.0</span>
