@@ -386,7 +386,7 @@ export class AudioManager {
      * Set individual sound volume
      */
     setSoundVolume(name, volume) {
-        if (this.soundVolumes.hasOwnProperty(name)) {
+        if (Object.prototype.hasOwnProperty.call(this.soundVolumes, name)) {
             this.soundVolumes[name] = Math.max(0, Math.min(1, volume));
         }
     }

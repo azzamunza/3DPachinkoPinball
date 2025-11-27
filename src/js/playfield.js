@@ -244,6 +244,17 @@ export class Playfield {
         const vSpacing = cfg.VERTICAL_SPACING;
         const hSpacing = cfg.HORIZONTAL_SPACING;
         
+        // Skip zone configuration for feature areas
+        const SKIP_ZONES = {
+            // Center area for feature zones
+            CENTER_FEATURE: { xRadius: 0.8, yMin: -1, yMax: 2 },
+            // Main V-pocket area
+            V_POCKET_CENTER: { xRadius: 0.6, yMax: -3 },
+            // Side bonus pocket areas
+            V_POCKET_LEFT: { xCenter: -3, xRadius: 0.5, yMin: -5, yMax: -3 },
+            V_POCKET_RIGHT: { xCenter: 3, xRadius: 0.5, yMin: -5, yMax: -3 }
+        };
+        
         let row = 0;
         for (let y = startY; y > endY; y -= vSpacing) {
             const isStaggered = row % 2 === 1;
@@ -259,12 +270,19 @@ export class Playfield {
                 const x = startX + i * hSpacing;
                 
                 // Skip center area for feature zones
-                if (Math.abs(x) < 0.8 && y < 2 && y > -1) continue;
+                if (Math.abs(x) < SKIP_ZONES.CENTER_FEATURE.xRadius && 
+                    y < SKIP_ZONES.CENTER_FEATURE.yMax && 
+                    y > SKIP_ZONES.CENTER_FEATURE.yMin) continue;
                 
                 // Skip areas for V-pockets
-                if (Math.abs(x - 0) < 0.6 && y < -3) continue;
-                if (Math.abs(x - 3) < 0.5 && y < -3 && y > -5) continue;
-                if (Math.abs(x + 3) < 0.5 && y < -3 && y > -5) continue;
+                if (Math.abs(x) < SKIP_ZONES.V_POCKET_CENTER.xRadius && 
+                    y < SKIP_ZONES.V_POCKET_CENTER.yMax) continue;
+                if (Math.abs(x - SKIP_ZONES.V_POCKET_RIGHT.xCenter) < SKIP_ZONES.V_POCKET_RIGHT.xRadius && 
+                    y < SKIP_ZONES.V_POCKET_RIGHT.yMax && 
+                    y > SKIP_ZONES.V_POCKET_RIGHT.yMin) continue;
+                if (Math.abs(x - SKIP_ZONES.V_POCKET_LEFT.xCenter) < SKIP_ZONES.V_POCKET_LEFT.xRadius && 
+                    y < SKIP_ZONES.V_POCKET_LEFT.yMax && 
+                    y > SKIP_ZONES.V_POCKET_LEFT.yMin) continue;
                 
                 this.createPeg({ x, y, z: 0 }, goldenMaterial);
             }

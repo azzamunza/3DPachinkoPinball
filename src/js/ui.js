@@ -170,11 +170,18 @@ export class UIManager {
      * Setup preset buttons
      */
     setupPresetButtons() {
+        // Define volume presets
+        const PRESETS = {
+            ARCADE: { master: 100, sounds: 80 },  // Default arcade experience
+            QUIET: { master: 50, sounds: 40 },     // Low volume for quieter environments
+            LOUD: { master: 100, sounds: 100 }     // Maximum volume
+        };
+        
         // Arcade preset (default)
         const arcadeBtn = document.getElementById('preset-arcade');
         if (arcadeBtn) {
             arcadeBtn.addEventListener('click', () => {
-                this.applyPreset({ master: 100, sounds: 80 });
+                this.applyPreset(PRESETS.ARCADE);
             });
         }
         
@@ -182,7 +189,7 @@ export class UIManager {
         const quietBtn = document.getElementById('preset-quiet');
         if (quietBtn) {
             quietBtn.addEventListener('click', () => {
-                this.applyPreset({ master: 50, sounds: 40 });
+                this.applyPreset(PRESETS.QUIET);
             });
         }
         
@@ -190,15 +197,15 @@ export class UIManager {
         const loudBtn = document.getElementById('preset-loud');
         if (loudBtn) {
             loudBtn.addEventListener('click', () => {
-                this.applyPreset({ master: 100, sounds: 100 });
+                this.applyPreset(PRESETS.LOUD);
             });
         }
         
-        // Reset preset
+        // Reset preset (same as Arcade - default settings)
         const resetBtn = document.getElementById('preset-reset');
         if (resetBtn) {
             resetBtn.addEventListener('click', () => {
-                this.applyPreset({ master: 100, sounds: 80 });
+                this.applyPreset(PRESETS.ARCADE);
             });
         }
     }
