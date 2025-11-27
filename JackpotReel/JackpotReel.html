@@ -348,8 +348,15 @@
         let leverGroup = null;
         let leverAnimating = false;
         let leverPullProgress = 0;
-        let leverTargetAngle = 0;
         let leverReturning = false;
+        
+        // Lever animation constants
+        const LEVER_PULL_SPEED = 0.08;
+        const LEVER_RETURN_SPEED = 0.03;
+        const LEVER_MAX_ANGLE = Math.PI * 0.4; // 72 degrees pull
+        
+        // Reference to machine group for animation (set during init)
+        let machineGroupRef = null;
 
         // --- 2. 3D SCENE SETUP ---
         function init() {
@@ -462,6 +469,7 @@
             // --- BUILD MACHINE ---
             const machineGroup = new THREE.Group();
             scene.add(machineGroup);
+            machineGroupRef = machineGroup; // Store reference for animation
 
             // ===== TOP BOX AREA =====
             // Main top box housing
@@ -723,6 +731,7 @@
             machineGroup.add(divider2);
 
             // --- COIN MECHANISM ---
+            // Positioned on the button deck area, left side, to match typical slot machine layouts
             const slotFrameGeo = new THREE.BoxGeometry(1.2, 2.2, 0.4);
             const slotFrameMat = new THREE.MeshStandardMaterial({ 
                 color: 0x666666, 
@@ -730,7 +739,7 @@
                 roughness: 0.2
             });
             const slotFrame = new THREE.Mesh(slotFrameGeo, slotFrameMat);
-            slotFrame.position.set(-6, -5, 5.5);
+            slotFrame.position.set(-6, -5, 5.5); // On button deck, left of center
             machineGroup.add(slotFrame);
 
             const slotHoleGeo = new THREE.PlaneGeometry(0.25, 1.6);
@@ -760,26 +769,28 @@
             // Left side light strip
             for (let i = 0; i < 5; i++) {
                 const lightGeo = new THREE.SphereGeometry(0.3, 8, 8);
+                const baseColor = new THREE.Color(i % 2 === 0 ? 0xff0000 : 0xffff00);
                 const lightMat = new THREE.MeshBasicMaterial({ 
-                    color: i % 2 === 0 ? 0xff0000 : 0xffff00 
+                    color: baseColor.clone()
                 });
                 const decorLight = new THREE.Mesh(lightGeo, lightMat);
                 decorLight.position.set(-9, -6 + i * 4, 4);
                 decorLight.userData.isDecorLight = true;
-                decorLight.userData.baseColor = i % 2 === 0 ? 0xff0000 : 0xffff00;
+                decorLight.userData.baseColor = baseColor; // Store as THREE.Color
                 machineGroup.add(decorLight);
             }
             
             // Right side light strip
             for (let i = 0; i < 5; i++) {
                 const lightGeo = new THREE.SphereGeometry(0.3, 8, 8);
+                const baseColor = new THREE.Color(i % 2 === 0 ? 0xffff00 : 0xff0000);
                 const lightMat = new THREE.MeshBasicMaterial({ 
-                    color: i % 2 === 0 ? 0xffff00 : 0xff0000 
+                    color: baseColor.clone()
                 });
                 const decorLight = new THREE.Mesh(lightGeo, lightMat);
                 decorLight.position.set(9, -6 + i * 4, 4);
                 decorLight.userData.isDecorLight = true;
-                decorLight.userData.baseColor = i % 2 === 0 ? 0xffff00 : 0xff0000;
+                decorLight.userData.baseColor = baseColor; // Store as THREE.Color
                 machineGroup.add(decorLight);
             }
 
@@ -795,14 +806,14 @@
             if (leverAnimating) {
                 if (!leverReturning) {
                     // Pulling down
-                    leverPullProgress += 0.08;
+                    leverPullProgress += LEVER_PULL_SPEED;
                     if (leverPullProgress >= 1) {
                         leverPullProgress = 1;
                         leverReturning = true;
                     }
                 } else {
                     // Returning up
-                    leverPullProgress -= 0.03;
+                    leverPullProgress -= LEVER_RETURN_SPEED;
                     if (leverPullProgress <= 0) {
                         leverPullProgress = 0;
                         leverAnimating = false;
@@ -811,8 +822,7 @@
                 }
                 
                 // Apply rotation (pull back = rotate towards player)
-                const maxAngle = Math.PI * 0.4; // 72 degrees pull
-                armGroup.rotation.x = -leverPullProgress * maxAngle;
+                armGroup.rotation.x = -leverPullProgress * LEVER_MAX_ANGLE;
             }
         }
 
@@ -1014,23 +1024,22 @@
 
             const time = Date.now() * 0.002;
             
-            // Animate neon accent lights
+            // Animate neon accent lights with direct intensity assignment
             scene.children.forEach(obj => {
                 if (obj.isPointLight) {
-                    obj.intensity = obj.intensity * 0.98 + (1.5 + Math.sin(time) * 0.5) * 0.02;
+                    obj.intensity = 1.5 + Math.sin(time) * 0.5;
                 }
             });
 
-            // Animate decorative lights (chase effect)
-            const machineGroup = scene.children.find(child => child.isGroup);
-            if (machineGroup) {
+            // Animate decorative lights (chase effect) using stored reference
+            if (machineGroupRef) {
                 let lightIndex = 0;
-                machineGroup.children.forEach(child => {
+                machineGroupRef.children.forEach(child => {
                     if (child.userData && child.userData.isDecorLight) {
                         const phase = (time + lightIndex * 0.5) % (Math.PI * 2);
                         const brightness = 0.5 + Math.sin(phase) * 0.5;
-                        const baseColor = new THREE.Color(child.userData.baseColor);
-                        child.material.color.copy(baseColor).multiplyScalar(brightness);
+                        // Use stored THREE.Color directly without creating new object
+                        child.material.color.copy(child.userData.baseColor).multiplyScalar(brightness);
                         lightIndex++;
                     }
                 });
