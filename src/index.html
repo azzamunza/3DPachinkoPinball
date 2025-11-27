@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>3D Hybrid Pachinko/Pinball Simulation</title>
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+    <div id="loading-screen">
+        <div class="loader"></div>
+        <p id="loading-text">Initializing 3D Engine...</p>
+    </div>
+
+    <div id="game-container">
+        <!-- 3D Canvas -->
+        <canvas id="game-canvas"></canvas>
+        
+        <!-- HUD Overlay -->
+        <div id="hud">
+            <div id="top-bar">
+                <div id="score-display">
+                    <span class="label">SCORE</span>
+                    <span id="score-value">0</span>
+                </div>
+                <div id="multiplier-badge" class="hidden">SESSION 2x</div>
+                <div id="balls-display">
+                    <span class="label">BALLS</span>
+                    <span id="balls-value">2000</span>
+                </div>
+            </div>
+            
+            <div id="combo-display" class="hidden">
+                <span id="combo-text">COMBO x0</span>
+            </div>
+            
+            <div id="event-notification" class="hidden">
+                <span id="event-text">+500 BUMPER!</span>
+            </div>
+            
+            <div id="rapid-fire-indicator" class="hidden">
+                RAPID-FIRE: ON
+            </div>
+        </div>
+        
+        <!-- Control Panel (Bottom) -->
+        <div id="control-panel">
+            <div id="dial-widget">
+                <div id="power-bar-container">
+                    <div id="power-bar"></div>
+                    <span id="power-label">0%</span>
+                </div>
+                <div id="angle-indicator">
+                    <span id="angle-value">0°</span>
+                </div>
+                <div id="rotation-indicator">
+                    <span id="rotation-value">CENTER</span>
+                </div>
+            </div>
+            
+            <button id="fire-button" class="action-btn">FIRE</button>
+            
+            <div id="jackpot-handle-container" class="disabled">
+                <div id="jackpot-handle">
+                    <span>↓</span>
+                </div>
+                <div id="jackpot-progress">
+                    <span id="jackpot-count">0/10</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Flipper Touch Zones (Mobile) -->
+        <div id="flipper-left-zone" class="flipper-zone"></div>
+        <div id="flipper-right-zone" class="flipper-zone"></div>
+        
+        <!-- Jackpot Overlay -->
+        <div id="jackpot-overlay" class="hidden">
+            <div id="slot-machine">
+                <h2>JACKPOT MODE!</h2>
+                <div id="reels-container">
+                    <div id="reel-1" class="reel">?</div>
+                    <div id="reel-2" class="reel">?</div>
+                    <div id="reel-3" class="reel">?</div>
+                </div>
+                <button id="spin-button">SPIN</button>
+                <div id="jackpot-result"></div>
+                <div id="jackpot-countdown" class="hidden">Auto-spin in: <span id="countdown-value">3</span>s</div>
+            </div>
+        </div>
+        
+        <!-- Game Over Screen -->
+        <div id="game-over-screen" class="hidden">
+            <div id="game-over-content">
+                <h2>GAME OVER</h2>
+                <p id="final-score">Final Score: 0</p>
+                <div id="high-score-form" class="hidden">
+                    <p>NEW HIGH SCORE!</p>
+                    <input type="text" id="initials-input" maxlength="3" placeholder="AAA">
+                    <button id="submit-score-btn">Submit</button>
+                </div>
+                <div id="leaderboard">
+                    <h3>TOP 10 HIGH SCORES</h3>
+                    <ol id="high-scores-list"></ol>
+                </div>
+                <button id="restart-btn">Play Again</button>
+            </div>
+        </div>
+        
+        <!-- Renderer Info -->
+        <div id="renderer-info">
+            <span id="renderer-type">WebGL 2.0</span>
+            <span id="fps-counter">60 FPS</span>
+        </div>
+    </div>
+
+    <!-- CDN Libraries -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/",
+            "cannon-es": "https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/+esm"
+        }
+    }
+    </script>
+    
+    <!-- Game Modules -->
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>
