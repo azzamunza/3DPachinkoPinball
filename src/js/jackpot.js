@@ -222,8 +222,13 @@ export class JackpotMachine {
         const weights = CONFIG.JACKPOT.SYMBOL_WEIGHTS;
         const totalWeight = weights.reduce((a, b) => a + b, 0);
         
-        // Use GPU noise RNG
-        let random = this.game.getGPUNoiseRNG() * totalWeight;
+        // Use GPU noise RNG with fallback to Math.random()
+        let random;
+        try {
+            random = this.game.getGPUNoiseRNG() * totalWeight;
+        } catch (e) {
+            random = Math.random() * totalWeight;
+        }
         
         for (let i = 0; i < symbols.length; i++) {
             random -= weights[i];

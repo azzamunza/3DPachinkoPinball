@@ -79,6 +79,8 @@ export class BallManager {
 
     /**
      * Spawn a ball at position with velocity
+     * Note: When totalBalls reaches 0, we can't spawn new balls but the game continues
+     * until all active balls drain. This is intentional for gameplay continuity.
      */
     spawnBall(position, velocity) {
         // Check if we have balls remaining
