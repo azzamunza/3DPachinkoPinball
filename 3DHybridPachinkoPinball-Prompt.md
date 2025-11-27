@@ -86,7 +86,7 @@ The objective is to create an advanced web-based arcade simulation demonstrating
 ### Pure Physics Simulation:
 - **Strict Requirement:** All ball movements must result exclusively from rigid body dynamics (gravity, friction, restitution, impulses). No artificial force fields, 'magnetic' guides, or hard-coded pathing allowed to force outcomes.
 - Balls must react naturally to inertia; if a ball enters any capture zone (e.g., funnel) with excessive speed, it should physically bounce out rather than being artificially clamped.
-- No 'rail-roading' mechanics: ball trajectories are determined solely by physics simulation, not scripted paths.
+- No 'railroading' mechanics: ball trajectories are determined solely by physics simulation, not scripted paths.
 
 ### Physics Engine Selection: Rapier3D (Primary) with Cannon-es Fallback
 **Rationale:**
