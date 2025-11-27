@@ -56,7 +56,9 @@ export class Playfield {
     }
 
     /**
-     * Create the backboard (playing surface) with generated background image
+     * Create the backboard (playing surface) with procedurally generated background
+     * Includes starfield, arcade-style geometric patterns, neon grid lines,
+     * decorative elements, and vignette effect
      */
     createBackboard() {
         const width = CONFIG.PLAYFIELD.WIDTH;

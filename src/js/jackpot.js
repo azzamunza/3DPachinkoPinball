@@ -113,7 +113,7 @@ export class JackpotMachine {
         const R = Math.max(0, (num >> 16) - amt);
         const G = Math.max(0, (num >> 8 & 0x00FF) - amt);
         const B = Math.max(0, (num & 0x0000FF) - amt);
-        return `#${(1 << 24 | R << 16 | G << 8 | B).toString(16).slice(1)}`;
+        return `#${(R << 16 | G << 8 | B).toString(16).padStart(6, '0')}`;
     }
 
     /**

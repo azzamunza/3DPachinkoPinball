@@ -369,6 +369,8 @@ export class UIManager {
         import('./config.js').then(module => {
             module.CONFIG.CANNON.POWER.MULTIPLIER = value;
             console.log('Cannon power multiplier updated to:', value);
+        }).catch(err => {
+            console.warn('Failed to update cannon power multiplier:', err);
         });
     }
     

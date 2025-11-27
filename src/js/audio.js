@@ -241,7 +241,7 @@ export class AudioManager {
         if (this.soundParams[name]) {
             // Update individual parameters
             for (const key of Object.keys(params)) {
-                if (Object.prototype.hasOwnProperty.call(this.soundParams[name], key)) {
+                if (key in this.soundParams[name]) {
                     this.soundParams[name][key] = params[key];
                 }
             }
@@ -254,7 +254,7 @@ export class AudioManager {
      * Set a single parameter for a sound
      */
     setSoundParam(name, param, value) {
-        if (this.soundParams[name] && Object.prototype.hasOwnProperty.call(this.soundParams[name], param)) {
+        if (this.soundParams[name] && param in this.soundParams[name]) {
             this.soundParams[name][param] = value;
             this.regenerateSound(name);
         }
