@@ -12,9 +12,15 @@ export class AudioManager {
         this.isMuted = false;
         this.isInitialized = false;
         
-        // Initialize on first user interaction
-        document.addEventListener('click', () => this.init(), { once: true });
-        document.addEventListener('keydown', () => this.init(), { once: true });
+        // Initialize on first user interaction using a single handler
+        const initHandler = () => {
+            this.init();
+            // Remove both listeners after first successful initialization
+            document.removeEventListener('click', initHandler);
+            document.removeEventListener('keydown', initHandler);
+        };
+        document.addEventListener('click', initHandler);
+        document.addEventListener('keydown', initHandler);
     }
     
     init() {

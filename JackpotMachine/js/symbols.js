@@ -11,6 +11,7 @@ import { CONFIG } from './config.js';
 export class SymbolRenderer {
     constructor() {
         this.symbols = new Map();
+        this.symbolDataURLs = new Map(); // Cache for data URLs to avoid repeated conversion
         this.canvasSize = 200;
     }
     
@@ -20,6 +21,8 @@ export class SymbolRenderer {
         for (const symbol of symbolConfigs) {
             const canvas = this.generateSymbol(symbol);
             this.symbols.set(symbol.id, canvas);
+            // Pre-generate data URL for performance
+            this.symbolDataURLs.set(symbol.id, canvas.toDataURL());
         }
         
         console.log(`Generated ${this.symbols.size} symbol images`);
@@ -27,6 +30,11 @@ export class SymbolRenderer {
     
     getSymbolCanvas(symbolId) {
         return this.symbols.get(symbolId);
+    }
+    
+    // Get cached data URL for better performance
+    getSymbolDataURL(symbolId) {
+        return this.symbolDataURLs.get(symbolId);
     }
     
     generateSymbol(symbol) {
@@ -80,9 +88,24 @@ export class SymbolRenderer {
         ctx.shadowColor = color;
         ctx.shadowBlur = 15;
         
-        // Rounded rectangle border
+        // Rounded rectangle border (with fallback for browsers without roundRect)
         ctx.beginPath();
-        ctx.roundRect(margin, margin, size - margin*2, size - margin*2, 15);
+        const x = margin, y = margin, w = size - margin*2, h = size - margin*2, r = 15;
+        if (ctx.roundRect) {
+            ctx.roundRect(x, y, w, h, r);
+        } else {
+            // Fallback for older browsers
+            ctx.moveTo(x + r, y);
+            ctx.lineTo(x + w - r, y);
+            ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+            ctx.lineTo(x + w, y + h - r);
+            ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+            ctx.lineTo(x + r, y + h);
+            ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+            ctx.lineTo(x, y + r);
+            ctx.quadraticCurveTo(x, y, x + r, y);
+            ctx.closePath();
+        }
         ctx.stroke();
         
         ctx.shadowBlur = 0;

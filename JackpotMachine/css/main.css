@@ -37,7 +37,7 @@
     --symbol-size: 100px;
     --reel-gap: 8px;
     
-    /* Animation */
+    /* Animation - Note: Must match CONFIG.REELS.SPIN_DURATION (2000ms) in js/config.js */
     --spin-duration: 2s;
     --reel-delay: 0.2s;
 }

@@ -155,11 +155,11 @@ class DancingDragonsGame {
         div.className = 'symbol';
         div.dataset.symbolId = symbolId;
         
-        // Use canvas-generated symbol image
-        const canvas = this.symbolRenderer.getSymbolCanvas(symbolId);
-        if (canvas) {
+        // Use cached data URL for better performance
+        const dataURL = this.symbolRenderer.getSymbolDataURL(symbolId);
+        if (dataURL) {
             const img = document.createElement('img');
-            img.src = canvas.toDataURL();
+            img.src = dataURL;
             img.className = 'symbol-image';
             img.alt = symbolData.name;
             div.appendChild(img);
@@ -424,12 +424,12 @@ class DancingDragonsGame {
                     if (idx >= this.reelPositions[col] && idx < this.reelPositions[col] + CONFIG.REELS.ROWS) {
                         sym.classList.add('expanding-wild');
                         
-                        // Replace with dragon symbol
-                        const canvas = this.symbolRenderer.getSymbolCanvas(CONFIG.SYMBOLS.DRAGON.id);
-                        if (canvas) {
+                        // Replace with dragon symbol using cached data URL
+                        const dataURL = this.symbolRenderer.getSymbolDataURL(CONFIG.SYMBOLS.DRAGON.id);
+                        if (dataURL) {
                             const img = sym.querySelector('.symbol-image');
                             if (img) {
-                                img.src = canvas.toDataURL();
+                                img.src = dataURL;
                             }
                         }
                     }
@@ -525,11 +525,24 @@ class DancingDragonsGame {
         
         // Check for wild-only wins (count >= 2 wilds from left)
         if (wildCount >= 2 && count === wildCount) {
-            // Wilds on their own don't pay in Dancing Dragons
-            return { win: 0 };
+            // Wilds on their own don't pay in Dancing Dragons - return consistent structure
+            return { 
+                symbol: null,
+                count: 0,
+                wildCount,
+                positions: [],
+                win: 0
+            };
         }
         
-        return { win: 0 };
+        // Default: no win - return consistent object structure
+        return { 
+            symbol: null,
+            count: 0,
+            wildCount: 0,
+            positions: [],
+            win: 0
+        };
     }
     
     evaluateScatters() {
@@ -552,13 +565,22 @@ class DancingDragonsGame {
             return {
                 symbol: CONFIG.SYMBOLS.YIN_YANG.id,
                 count: scatterCount,
+                wildCount: 0,
                 positions,
                 win: pay,
                 isScatter: true,
             };
         }
         
-        return { win: 0 };
+        // Default: no win - return consistent object structure
+        return { 
+            symbol: null,
+            count: 0,
+            wildCount: 0,
+            positions: [],
+            win: 0,
+            isScatter: false
+        };
     }
     
     async showResults() {
