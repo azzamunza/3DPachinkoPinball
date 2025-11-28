@@ -1,5 +1,5 @@
 // Module aliases for Matter.js
-const { Engine, Render, World, Bodies, Body, Events, Constraint, Runner, Composite } = Matter;
+const { Engine, Render, World, Bodies, Body, Events, Constraint, Runner } = Matter;
 
 // --- GLOBAL CONFIGURATION ---
 const CANVAS_WIDTH = 1000;  // Wider game area
@@ -8,6 +8,15 @@ const BALL_RADIUS = 8;
 const BALL_POOL_SIZE = 50;
 const JACKPOT_THRESHOLD = 10;
 const GRAVITY_SCALE = 1;
+
+// Jackpot Machine positioning constants
+const JACKPOT_MACHINE_X = 200;
+const JACKPOT_MACHINE_Y = 480;
+const JACKPOT_MACHINE_WIDTH = 150;
+const JACKPOT_MACHINE_HEIGHT = 180;
+const JACKPOT_ZONE_LEFT = 110;
+const JACKPOT_ZONE_RIGHT = 290;
+const JACKPOT_ZONE_BOTTOM = 580;
 
 // --- GAME STATE ---
 let engine, world, render;
@@ -23,6 +32,7 @@ let mouseY = CANVAS_HEIGHT / 2;
 
 // LED lights array for illumination
 let ledLights = [];
+let ledAnimationInterval = null; // Store interval ID for cleanup
 
 // Spinning wheels for mini-games
 let spinningWheels = [];
@@ -241,10 +251,10 @@ function createPlayfield() {
 
 // Create Jackpot Machine visual area
 function createJackpotMachine() {
-    const machineX = 200;  // Left side positioning as per reference
-    const machineY = 480;
-    const machineWidth = 150;
-    const machineHeight = 180;
+    const machineX = JACKPOT_MACHINE_X;
+    const machineY = JACKPOT_MACHINE_Y;
+    const machineWidth = JACKPOT_MACHINE_WIDTH;
+    const machineHeight = JACKPOT_MACHINE_HEIGHT;
     
     // Machine frame (visual only - hollow for ball entry)
     const machineFrame = [
@@ -295,8 +305,8 @@ function createJackpotMachine() {
 
 // Create curved funnel pins leading balls to Jackpot Machine
 function createJackpotFunnel() {
-    const machineX = 200;
-    const machineY = 390; // Just above the machine
+    const machineX = JACKPOT_MACHINE_X;
+    const machineY = JACKPOT_MACHINE_Y - 90; // Just above the machine
     const funnelPins = [];
     
     // Create curved funnel shape with pins
@@ -363,8 +373,9 @@ function createPachinkoGridPins() {
             const x = centerX + Math.cos(angle) * ringRadius * 0.7;
             const y = ringY;
             
-            // Skip if in jackpot machine zone
-            if (x < 130 || x > 270 || y > 380) {
+            // Skip if in jackpot machine zone (using constants with margin)
+            const jackpotZoneMargin = 20;
+            if (x < (JACKPOT_ZONE_LEFT + jackpotZoneMargin) || x > (JACKPOT_ZONE_RIGHT - jackpotZoneMargin) || y > (JACKPOT_MACHINE_Y - 100)) {
                 if (x > 40 && x < CANVAS_WIDTH - 40) {
                     const pin = Bodies.circle(x, y, 4, {
                         isStatic: true,
@@ -394,8 +405,8 @@ function createPachinkoGridPins() {
         for (let col = 0; col < pinsInRow; col++) {
             const x = startX + col * spacingX + offsetX;
             
-            // Skip jackpot machine area
-            if (!(x > 110 && x < 290 && y < 580)) {
+            // Skip jackpot machine area using constants
+            if (!(x > JACKPOT_ZONE_LEFT && x < JACKPOT_ZONE_RIGHT && y < JACKPOT_ZONE_BOTTOM)) {
                 const pin = Bodies.circle(x, y, 4, {
                     isStatic: true,
                     restitution: 0.8,
@@ -526,7 +537,12 @@ function createLEDLights() {
 
 // Animate LED lights
 function animateLEDs() {
-    setInterval(() => {
+    // Clear any existing animation interval
+    if (ledAnimationInterval) {
+        clearInterval(ledAnimationInterval);
+    }
+    
+    ledAnimationInterval = setInterval(() => {
         ledLights.forEach((light, index) => {
             // Random ambient flicker
             if (Math.random() < 0.1) {
@@ -934,13 +950,7 @@ function setupControls() {
         mouseY = (e.clientY - rect.top) * (CANVAS_HEIGHT / rect.height);
     });
 
-    // Prevent right-click context menu on canvas
-    gameCanvas.addEventListener('contextmenu', (e) => {
-        e.preventDefault();
-        return false;
-    });
-    
-    // Also prevent on document level when over canvas
+    // Prevent right-click context menu on canvas and document
     document.addEventListener('contextmenu', (e) => {
         if (e.target === gameCanvas) {
             e.preventDefault();
