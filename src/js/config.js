@@ -104,7 +104,7 @@ export const CONFIG = {
             CENTER: { x: 0, y: -9 }
         },
         
-        // Authentic Pachinko Features
+        // Authentic Pachinko Features (based on Wikipedia: https://en.wikipedia.org/wiki/Pachinko#Design)
         PACHINKO: {
             // Start Pocket - Ball entry point at top
             START_POCKET: {
@@ -112,28 +112,37 @@ export const CONFIG = {
                 WIDTH: 1.5,
                 POINTS: 0
             },
-            // V-Pockets - Special winning pockets
+            // V-Pockets (Chuckers) - Special winning pockets that trigger slot machine
+            // In authentic Pachinko, balls landing in chuckers trigger the slot machine
             V_POCKETS: [
-                { x: 0, y: -5, points: 500, freeBalls: 3, label: 'V-POCKET' },
-                { x: -3, y: -4, points: 200, freeBalls: 1, label: 'BONUS' },
-                { x: 3, y: -4, points: 200, freeBalls: 1, label: 'BONUS' }
+                { x: -2.5, y: -3, points: 500, freeBalls: 3, label: 'V-POCKET', triggersSlot: true },
+                { x: 1, y: -2.5, points: 200, freeBalls: 1, label: 'BONUS' },
+                { x: 4, y: -3.5, points: 200, freeBalls: 1, label: 'BONUS' }
             ],
-            // Tulip Gates - Opening/Closing mechanical gates
+            // Tulip Gates (Yakumono) - Opening/Closing mechanical gates
+            // These are characteristic of Pachinko - they open temporarily to allow balls through
             TULIP_GATES: [
-                { x: -2, y: 2, openTime: 2.0, closeTime: 3.0 },
-                { x: 2, y: 2, openTime: 2.0, closeTime: 3.0 }
+                { x: -3.5, y: 1, openTime: 2.0, closeTime: 3.0 },
+                { x: 3.5, y: 1, openTime: 2.0, closeTime: 3.0 },
+                { x: 0, y: 0, openTime: 2.5, closeTime: 2.5 }
             ],
-            // Feature Zones - Trigger special events
+            // Feature Zones - Trigger special events (Koatari, Oatari)
             FEATURE_ZONES: [
-                { x: -4, y: 0, type: 'MULTIPLIER', value: 2 },
-                { x: 4, y: 0, type: 'MULTIPLIER', value: 2 },
-                { x: 0, y: 3, type: 'FEVER', duration: 10 }
+                { x: -4.5, y: 2, type: 'MULTIPLIER', value: 2 },
+                { x: 4.5, y: 2, type: 'MULTIPLIER', value: 2 },
+                { x: 0, y: 4, type: 'FEVER', duration: 10 }
             ],
-            // Fever Mode - Special high-scoring mode
+            // Fever Mode (Kakuhen) - Probability change state from Wikipedia
             FEVER_MODE: {
                 DURATION: 15, // seconds
                 MULTIPLIER: 5,
                 BALL_BONUS: 10
+            },
+            // Slot Machine Area - Where the jackpot machine is placed
+            SLOT_MACHINE_AREA: {
+                POSITION: { x: -2, y: -4.5, z: 0.5 },
+                WIDTH: 3.5,
+                HEIGHT: 2.5
             }
         }
     },

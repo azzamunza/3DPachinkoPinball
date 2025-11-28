@@ -19,6 +19,16 @@
         <!-- HUD Overlay -->
         <div id="hud">
             <div id="top-bar">
+                <!-- Mortar Cannon Offset Controls (Requirement #7) -->
+                <div id="cannon-offset-controls">
+                    <span class="control-label-sm">Cannon Offset:</span>
+                    <label for="cannon-offset-x">X:</label>
+                    <input type="number" id="cannon-offset-x" value="0" step="0.1" min="-10" max="10">
+                    <label for="cannon-offset-y">Y:</label>
+                    <input type="number" id="cannon-offset-y" value="0" step="0.1" min="-10" max="10">
+                    <button id="save-cannon-offset" class="save-offset-btn">Save</button>
+                </div>
+                
                 <div id="score-display">
                     <span class="label">SCORE</span>
                     <span id="score-value">0</span>

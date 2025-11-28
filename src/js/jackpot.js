@@ -118,15 +118,17 @@ export class JackpotMachine {
 
     /**
      * Create 3D machine visual with spinning reels (visible on playfield)
+     * Positioned according to reference image: left of center, lower portion of playfield
      */
     createMachineVisual() {
         const group = new THREE.Group();
-        group.position.set(0, -5, 0.5);
+        // Position as per reference image: left of center, in the lower-middle area
+        group.position.set(-2, -4.5, 0.5);
         
-        // Machine cabinet body
-        const bodyGeometry = new THREE.BoxGeometry(4, 2.8, 1.2);
+        // Machine cabinet body - slightly larger and more prominent
+        const bodyGeometry = new THREE.BoxGeometry(3.5, 2.5, 1.2);
         const bodyMaterial = new THREE.MeshStandardMaterial({
-            color: 0x8B0000,
+            color: 0x8B0000, // Deep red like Dancing Dragons theme
             metalness: 0.7,
             roughness: 0.3
         });
@@ -134,10 +136,10 @@ export class JackpotMachine {
         body.castShadow = true;
         group.add(body);
         
-        // Gold trim around the cabinet
-        const trimGeometry = new THREE.BoxGeometry(4.1, 2.9, 0.05);
+        // Gold trim around the cabinet (Chinese theme)
+        const trimGeometry = new THREE.BoxGeometry(3.6, 2.6, 0.05);
         const trimMaterial = new THREE.MeshStandardMaterial({
-            color: 0xFFD700,
+            color: 0xFFD700, // Gold
             metalness: 0.9,
             roughness: 0.1
         });

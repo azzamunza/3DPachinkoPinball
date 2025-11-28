@@ -15,6 +15,10 @@ export class Cannon {
         this.rotation = 0;
         this.elevation = 0;
         
+        // Offset values (adjustable via UI - Requirement #7)
+        this.offsetX = 0;
+        this.offsetY = 0;
+        
         // Cooldown
         this.cooldownRemaining = 0;
         this.rapidFireEnabled = false;
@@ -31,9 +35,13 @@ export class Cannon {
     create() {
         const position = CONFIG.CANNON.POSITION;
         
+        // Apply offset values (Requirement #7)
+        const effectiveX = position.x + this.offsetX;
+        const effectiveY = position.y + this.offsetY;
+        
         // Create cannon group
         this.barrelGroup = new THREE.Group();
-        this.barrelGroup.position.set(position.x, position.y, position.z + 0.5);
+        this.barrelGroup.position.set(effectiveX, effectiveY, position.z + 0.5);
         
         // Cannon base
         const baseGeometry = new THREE.CylinderGeometry(0.6, 0.8, 0.4, 16);
@@ -242,14 +250,15 @@ export class Cannon {
 
     /**
      * Get spawn position for new ball - from cannon at bottom
+     * Applies offset values (Requirement #7)
      */
     getSpawnPosition() {
         const cannonPos = CONFIG.CANNON.POSITION;
         const offset = 1.0; // Distance from cannon center
         
         return {
-            x: cannonPos.x + this.rotation * 0.5,
-            y: cannonPos.y + offset, // Slightly above cannon
+            x: cannonPos.x + this.offsetX + this.rotation * 0.5,
+            y: cannonPos.y + this.offsetY + offset, // Slightly above cannon
             z: cannonPos.z + 0.3
         };
     }
