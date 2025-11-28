@@ -1,0 +1,976 @@
+/* ========================================
+   Dancing Dragons Jackpot Machine
+   Pachinko Pinball Edition - Main Styles
+   ======================================== */
+
+/* CSS Variables */
+:root {
+    /* Colors - Asian/Dragon Theme with Pachinko Neon */
+    --color-primary: #ff0000;
+    --color-secondary: #ffd700;
+    --color-accent: #00ffff;
+    --color-bg-dark: #1a0a1a;
+    --color-bg-medium: #2d1a2d;
+    --color-bg-light: #4a2a4a;
+    --color-text: #ffffff;
+    --color-text-gold: #ffd700;
+    --color-text-red: #ff4444;
+    --color-neon-pink: #ff00ff;
+    --color-neon-green: #00ff00;
+    --color-dragon-red: #8b0000;
+    --color-dragon-gold: #daa520;
+    
+    /* Gradients */
+    --gradient-gold: linear-gradient(135deg, #ffd700 0%, #ff8c00 50%, #ffd700 100%);
+    --gradient-dragon: linear-gradient(135deg, #8b0000 0%, #ff4500 50%, #8b0000 100%);
+    --gradient-neon: linear-gradient(180deg, #ff00ff 0%, #00ffff 100%);
+    --gradient-dark: linear-gradient(180deg, #1a0a1a 0%, #0d050d 100%);
+    
+    /* Shadows */
+    --shadow-neon: 0 0 10px var(--color-accent), 0 0 20px var(--color-accent), 0 0 30px var(--color-accent);
+    --shadow-gold: 0 0 10px var(--color-secondary), 0 0 20px rgba(255, 215, 0, 0.5);
+    --shadow-red: 0 0 10px var(--color-primary), 0 0 20px rgba(255, 0, 0, 0.5);
+    
+    /* Sizing */
+    --reel-width: 120px;
+    --reel-height: 360px;
+    --symbol-size: 100px;
+    --reel-gap: 8px;
+    
+    /* Animation - Note: Must match CONFIG.REELS.SPIN_DURATION (2000ms) in js/config.js */
+    --spin-duration: 2s;
+    --reel-delay: 0.2s;
+}
+
+/* Reset & Base */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: 'Orbitron', 'Noto Sans SC', sans-serif;
+    background: var(--gradient-dark);
+    color: var(--color-text);
+}
+
+/* Loading Screen */
+#loading-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--color-bg-dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    transition: opacity 0.5s ease;
+}
+
+#loading-screen.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.dragon-loader {
+    text-align: center;
+}
+
+.dragon-icon {
+    font-size: 80px;
+    animation: dragonFloat 2s ease-in-out infinite;
+}
+
+@keyframes dragonFloat {
+    0%, 100% { transform: translateY(0) rotate(-5deg); }
+    50% { transform: translateY(-20px) rotate(5deg); }
+}
+
+.loader-text {
+    font-size: 24px;
+    color: var(--color-text-gold);
+    margin: 20px 0;
+    text-shadow: var(--shadow-gold);
+}
+
+.loader-bar {
+    width: 300px;
+    height: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 5px;
+    overflow: hidden;
+    border: 2px solid var(--color-secondary);
+}
+
+.loader-progress {
+    height: 100%;
+    width: 0%;
+    background: var(--gradient-gold);
+    animation: loadProgress 2s ease-out forwards;
+}
+
+@keyframes loadProgress {
+    to { width: 100%; }
+}
+
+/* Game Container */
+#game-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: 
+        radial-gradient(ellipse at center, rgba(139, 0, 0, 0.3) 0%, transparent 70%),
+        var(--gradient-dark);
+    overflow: hidden;
+}
+
+/* Header */
+#game-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 30px;
+    background: linear-gradient(180deg, rgba(139, 0, 0, 0.8) 0%, rgba(26, 10, 26, 0.9) 100%);
+    border-bottom: 3px solid var(--color-secondary);
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+}
+
+.game-title {
+    font-size: 32px;
+    font-weight: 900;
+    color: var(--color-secondary);
+    text-shadow: 
+        0 0 10px var(--color-secondary),
+        0 0 20px rgba(255, 215, 0, 0.5),
+        2px 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.dragon-emoji {
+    font-size: 28px;
+    animation: dragonPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes dragonPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+.game-subtitle {
+    font-size: 12px;
+    color: var(--color-accent);
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    text-shadow: var(--shadow-neon);
+}
+
+.balance-display {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 10px 20px;
+    border-radius: 10px;
+    border: 2px solid var(--color-secondary);
+}
+
+.balance-label {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.6);
+    letter-spacing: 2px;
+}
+
+.balance-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--color-text-gold);
+    text-shadow: var(--shadow-gold);
+}
+
+/* Slot Machine */
+#slot-machine {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    position: relative;
+}
+
+.machine-frame {
+    position: relative;
+    background: 
+        linear-gradient(145deg, #3d1a1a 0%, #1a0a0a 50%, #3d1a1a 100%);
+    border: 6px solid var(--color-secondary);
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 
+        0 0 30px rgba(255, 215, 0, 0.3),
+        inset 0 0 50px rgba(0, 0, 0, 0.5),
+        0 10px 40px rgba(0, 0, 0, 0.8);
+}
+
+/* Decorative Frame Corners */
+.frame-corner {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    background: var(--gradient-gold);
+    z-index: 10;
+}
+
+.frame-corner::before {
+    content: '🐉';
+    position: absolute;
+    font-size: 30px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.top-left { top: -15px; left: -15px; border-radius: 50% 0 50% 0; }
+.top-right { top: -15px; right: -15px; border-radius: 0 50% 0 50%; transform: scaleX(-1); }
+.bottom-left { bottom: -15px; left: -15px; border-radius: 0 50% 0 50%; }
+.bottom-right { bottom: -15px; right: -15px; border-radius: 50% 0 50% 0; transform: scaleX(-1); }
+
+/* Win Display */
+#win-display {
+    position: absolute;
+    top: -60px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--gradient-dragon);
+    padding: 10px 40px;
+    border-radius: 30px;
+    border: 3px solid var(--color-secondary);
+    z-index: 20;
+    animation: winPulse 0.5s ease-in-out infinite;
+}
+
+#win-display.hidden {
+    display: none;
+}
+
+@keyframes winPulse {
+    0%, 100% { transform: translateX(-50%) scale(1); }
+    50% { transform: translateX(-50%) scale(1.05); }
+}
+
+#win-amount {
+    font-size: 28px;
+    font-weight: 900;
+    color: var(--color-text-gold);
+    text-shadow: var(--shadow-gold);
+}
+
+/* Reels Container */
+#reels-container {
+    display: flex;
+    gap: var(--reel-gap);
+    background: #0a0a0a;
+    padding: 15px;
+    border-radius: 10px;
+    border: 4px solid #333;
+    position: relative;
+    overflow: hidden;
+    box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.8);
+}
+
+/* Individual Reel */
+.reel {
+    width: var(--reel-width);
+    height: var(--reel-height);
+    background: linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 50%, #1a1a1a 100%);
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+    border: 2px solid #444;
+}
+
+/* Reel top/bottom gradient overlay */
+.reel::before,
+.reel::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 40px;
+    z-index: 5;
+    pointer-events: none;
+}
+
+.reel::before {
+    top: 0;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.9) 0%, transparent 100%);
+}
+
+.reel::after {
+    bottom: 0;
+    background: linear-gradient(0deg, rgba(0, 0, 0, 0.9) 0%, transparent 100%);
+}
+
+/* Reel Strip (contains symbols) */
+.reel-strip {
+    display: flex;
+    flex-direction: column;
+    transition: transform var(--spin-duration) cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.reel.spinning .reel-strip {
+    transition: none;
+}
+
+/* Symbol */
+.symbol {
+    width: var(--reel-width);
+    height: var(--symbol-size);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    position: relative;
+}
+
+.symbol-image {
+    width: 90%;
+    height: 90%;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+    transition: transform 0.2s ease;
+}
+
+.symbol.winning .symbol-image {
+    animation: symbolWin 0.5s ease-in-out infinite;
+}
+
+@keyframes symbolWin {
+    0%, 100% { transform: scale(1); filter: brightness(1); }
+    50% { transform: scale(1.1); filter: brightness(1.3); }
+}
+
+/* Expanding Wild */
+.symbol.expanding-wild {
+    animation: expandWild 0.5s ease-out forwards;
+}
+
+@keyframes expandWild {
+    0% { transform: scaleY(1); }
+    50% { transform: scaleY(1.5); }
+    100% { transform: scaleY(3); }
+}
+
+/* Paylines Overlay */
+.paylines-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.payline-path {
+    fill: none;
+    stroke-width: 3;
+    stroke-linecap: round;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.payline-path.active {
+    opacity: 1;
+    animation: paylineGlow 1s ease-in-out infinite;
+}
+
+@keyframes paylineGlow {
+    0%, 100% { stroke-width: 3; }
+    50% { stroke-width: 5; }
+}
+
+/* Control Panel */
+#control-panel {
+    background: linear-gradient(0deg, rgba(26, 10, 26, 0.95) 0%, rgba(45, 26, 45, 0.9) 100%);
+    border-top: 3px solid var(--color-secondary);
+    padding: 15px 30px;
+}
+
+.controls-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.control-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+.control-label {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.value-display {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--color-text-gold);
+    min-width: 60px;
+    text-align: center;
+}
+
+.bet-buttons {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.control-btn {
+    background: linear-gradient(180deg, #4a4a4a 0%, #2a2a2a 100%);
+    border: 2px solid var(--color-secondary);
+    color: var(--color-text);
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+}
+
+.control-btn:hover {
+    background: linear-gradient(180deg, #5a5a5a 0%, #3a3a3a 100%);
+    box-shadow: var(--shadow-gold);
+}
+
+.control-btn:active {
+    transform: scale(0.95);
+}
+
+.control-btn.small {
+    padding: 8px 15px;
+    font-size: 18px;
+    min-width: 40px;
+}
+
+/* Spin Button */
+.spin-btn {
+    background: var(--gradient-dragon);
+    border: 4px solid var(--color-secondary);
+    color: var(--color-text-gold);
+    padding: 15px 50px;
+    border-radius: 50px;
+    font-family: inherit;
+    font-size: 24px;
+    font-weight: 900;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    box-shadow: 
+        0 0 20px rgba(255, 215, 0, 0.3),
+        0 5px 15px rgba(0, 0, 0, 0.4);
+}
+
+.spin-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.5s ease;
+}
+
+.spin-btn:hover::before {
+    left: 100%;
+}
+
+.spin-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 
+        0 0 30px rgba(255, 215, 0, 0.5),
+        0 8px 25px rgba(0, 0, 0, 0.5);
+}
+
+.spin-btn:active {
+    transform: scale(0.98);
+}
+
+.spin-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.spin-btn .spin-icon {
+    display: none;
+}
+
+.spin-btn.spinning .spin-text {
+    display: none;
+}
+
+.spin-btn.spinning .spin-icon {
+    display: inline-block;
+    animation: spinIcon 1s linear infinite;
+}
+
+@keyframes spinIcon {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Payline Indicators */
+.payline-indicators {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 15px;
+}
+
+.payline-indicator {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.5);
+    transition: all 0.3s ease;
+}
+
+.payline-indicator.active {
+    background: var(--color-primary);
+    border-color: var(--color-secondary);
+    color: var(--color-text);
+    box-shadow: var(--shadow-red);
+}
+
+/* Floating Buttons */
+.floating-btn {
+    position: fixed;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.7);
+    border: 2px solid var(--color-secondary);
+    font-size: 24px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 100;
+}
+
+.floating-btn:hover {
+    background: rgba(255, 215, 0, 0.2);
+    transform: scale(1.1);
+}
+
+.floating-btn.settings { bottom: 20px; left: 20px; }
+.floating-btn.paytable { bottom: 20px; left: 80px; }
+.floating-btn.sound { bottom: 20px; left: 140px; }
+
+.floating-btn.muted {
+    opacity: 0.5;
+}
+
+/* Modals */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+.modal.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.modal-content {
+    background: var(--color-bg-medium);
+    border: 4px solid var(--color-secondary);
+    border-radius: 20px;
+    padding: 30px;
+    max-width: 90%;
+    max-height: 90%;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 0 50px rgba(255, 215, 0, 0.3);
+}
+
+.modal-title {
+    font-size: 28px;
+    color: var(--color-text-gold);
+    text-align: center;
+    margin-bottom: 20px;
+    text-shadow: var(--shadow-gold);
+}
+
+.close-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 40px;
+    height: 40px;
+    background: var(--color-primary);
+    border: 2px solid var(--color-secondary);
+    border-radius: 50%;
+    color: var(--color-text);
+    font-size: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.close-btn:hover {
+    background: #ff4444;
+    transform: scale(1.1);
+}
+
+/* Gamble Feature */
+.gamble-content {
+    text-align: center;
+    min-width: 400px;
+}
+
+.gamble-display {
+    margin: 20px 0;
+}
+
+.gamble-card {
+    width: 120px;
+    height: 160px;
+    background: white;
+    border: 4px solid #333;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 60px;
+    margin: 20px;
+    transition: transform 0.5s ease;
+}
+
+.gamble-card.flipping {
+    transform: rotateY(180deg);
+}
+
+.gamble-card.red { color: #ff0000; }
+.gamble-card.black { color: #000000; }
+
+.gamble-info {
+    font-size: 18px;
+    color: var(--color-text);
+}
+
+.gamble-info span {
+    color: var(--color-text-gold);
+    font-weight: 700;
+}
+
+.gamble-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.gamble-btn {
+    padding: 15px 30px;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+}
+
+.gamble-btn.red {
+    background: linear-gradient(180deg, #ff4444 0%, #cc0000 100%);
+    border: 3px solid #ff6666;
+    color: white;
+}
+
+.gamble-btn.black {
+    background: linear-gradient(180deg, #444444 0%, #222222 100%);
+    border: 3px solid #666666;
+    color: white;
+}
+
+.gamble-btn.collect {
+    background: var(--gradient-gold);
+    border: 3px solid #ffcc00;
+    color: #333;
+}
+
+.gamble-btn:hover {
+    transform: scale(1.05);
+}
+
+.gamble-history {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.history-label {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+#gamble-history-cards {
+    display: flex;
+    justify-content: center;
+    gap: 5px;
+    margin-top: 10px;
+}
+
+.history-card {
+    width: 30px;
+    height: 40px;
+    background: white;
+    border: 2px solid #333;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+}
+
+/* Paytable */
+.paytable-content {
+    min-width: 600px;
+}
+
+#paytable-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.paytable-item {
+    background: rgba(0, 0, 0, 0.3);
+    border: 2px solid rgba(255, 215, 0, 0.3);
+    border-radius: 10px;
+    padding: 15px;
+    text-align: center;
+}
+
+.paytable-symbol {
+    font-size: 48px;
+    margin-bottom: 10px;
+}
+
+.paytable-name {
+    font-size: 14px;
+    color: var(--color-text-gold);
+    margin-bottom: 10px;
+}
+
+.paytable-pays {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+    line-height: 1.6;
+}
+
+/* Celebration Overlay */
+#celebration-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    opacity: 1;
+    transition: opacity 0.5s ease;
+}
+
+#celebration-overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.celebration-content {
+    text-align: center;
+    animation: celebrationPop 0.5s ease-out;
+}
+
+@keyframes celebrationPop {
+    0% { transform: scale(0); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+#celebration-title {
+    font-size: 48px;
+    color: var(--color-text-gold);
+    text-shadow: 
+        0 0 20px var(--color-secondary),
+        0 0 40px var(--color-secondary);
+    animation: titlePulse 0.5s ease-in-out infinite;
+}
+
+@keyframes titlePulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+#celebration-amount {
+    font-size: 72px;
+    font-weight: 900;
+    color: var(--color-text-gold);
+    text-shadow: 
+        0 0 30px var(--color-secondary),
+        0 0 60px var(--color-secondary);
+    margin: 20px 0;
+}
+
+.celebration-dragons {
+    margin-top: 20px;
+}
+
+.flying-dragon {
+    font-size: 60px;
+    display: inline-block;
+    animation: flyDragon 2s ease-in-out infinite;
+}
+
+.flying-dragon:nth-child(2) {
+    animation-delay: 0.3s;
+}
+
+.flying-dragon:nth-child(3) {
+    animation-delay: 0.6s;
+}
+
+@keyframes flyDragon {
+    0%, 100% { transform: translateY(0) rotate(-10deg); }
+    50% { transform: translateY(-30px) rotate(10deg); }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    :root {
+        --reel-width: 80px;
+        --reel-height: 240px;
+        --symbol-size: 70px;
+        --reel-gap: 4px;
+    }
+    
+    .game-title {
+        font-size: 20px;
+    }
+    
+    .dragon-emoji {
+        font-size: 18px;
+    }
+    
+    .balance-value {
+        font-size: 18px;
+    }
+    
+    .spin-btn {
+        padding: 12px 30px;
+        font-size: 18px;
+    }
+    
+    .control-group {
+        gap: 3px;
+    }
+    
+    .value-display {
+        font-size: 16px;
+    }
+    
+    .floating-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
+    }
+    
+    .modal-content {
+        padding: 20px;
+    }
+    
+    .gamble-content {
+        min-width: auto;
+    }
+    
+    .paytable-content {
+        min-width: auto;
+    }
+    
+    #paytable-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    :root {
+        --reel-width: 60px;
+        --reel-height: 180px;
+        --symbol-size: 55px;
+    }
+    
+    #game-header {
+        flex-direction: column;
+        gap: 10px;
+        padding: 10px;
+    }
+    
+    .controls-row {
+        gap: 10px;
+    }
+    
+    .spin-btn {
+        padding: 10px 25px;
+        font-size: 16px;
+    }
+    
+    .payline-indicators {
+        gap: 4px;
+    }
+    
+    .payline-indicator {
+        width: 22px;
+        height: 22px;
+        font-size: 10px;
+    }
+}
