@@ -350,7 +350,8 @@ export class Playfield {
     }
 
     /**
-     * Create boundary walls
+     * Create boundary walls - Arch-shaped boundary as per reference image
+     * The shape resembles a tombstone/arch with rounded top and straight sides
      */
     createWalls() {
         const width = CONFIG.PLAYFIELD.WIDTH;
@@ -361,29 +362,77 @@ export class Playfield {
         // Wall material
         const material = this.game.renderer.createMaterial(CONFIG.MATERIALS.WALL);
         
-        // Left wall
+        // Calculate arch dimensions - arch takes up top portion of playfield
+        const archRadius = width / 2; // Radius of the curved top
+        const archCenterY = height / 2 - archRadius; // Y position where arch meets straight walls
+        const straightWallHeight = height / 2 + archCenterY; // Height of the straight portion
+        
+        // Left straight wall (from bottom to where arch begins)
         this.createWall(
-            { x: -width/2 - wallThickness/2, y: 0, z: 0 },
-            { x: wallThickness/2, y: height/2, z: depth/2 },
+            { x: -width/2 - wallThickness/2, y: -height/4, z: 0 },
+            { x: wallThickness/2, y: straightWallHeight / 2 + 1, z: depth/2 },
             material
         );
         
-        // Right wall
+        // Right straight wall (from bottom to where arch begins)
         this.createWall(
-            { x: width/2 + wallThickness/2, y: 0, z: 0 },
-            { x: wallThickness/2, y: height/2, z: depth/2 },
+            { x: width/2 + wallThickness/2, y: -height/4, z: 0 },
+            { x: wallThickness/2, y: straightWallHeight / 2 + 1, z: depth/2 },
             material
         );
         
-        // Top wall (curved section represented as straight for simplicity)
-        this.createWall(
-            { x: 0, y: height/2 + wallThickness/2, z: 0 },
-            { x: width/2, y: wallThickness/2, z: depth/2 },
-            material
-        );
+        // Create curved arch at top using multiple segments
+        this.createArchWall(archCenterY, archRadius, wallThickness, material);
         
-        // Add angled walls for the "upside-down U" shape
+        // Add angled walls for ball funneling
         this.createAngledWalls(material);
+    }
+    
+    /**
+     * Create curved arch wall at top of playfield using segments
+     */
+    createArchWall(centerY, radius, thickness, material) {
+        const numSegments = 16; // Number of segments to approximate the arch
+        const startAngle = 0; // Start from left (pointing right)
+        const endAngle = Math.PI; // End at right (half circle)
+        const depth = CONFIG.PLAYFIELD.DEPTH;
+        
+        for (let i = 0; i < numSegments; i++) {
+            const angle1 = startAngle + (endAngle - startAngle) * (i / numSegments);
+            const angle2 = startAngle + (endAngle - startAngle) * ((i + 1) / numSegments);
+            const midAngle = (angle1 + angle2) / 2;
+            
+            // Calculate position on the arc
+            const x = Math.cos(midAngle) * radius;
+            const y = centerY + Math.sin(midAngle) * radius;
+            
+            // Calculate segment length
+            const segmentLength = radius * (angle2 - angle1) * 1.1;
+            
+            // Create wall segment
+            const segmentGeo = new THREE.BoxGeometry(segmentLength, thickness, depth);
+            const segmentMesh = new THREE.Mesh(segmentGeo, material);
+            segmentMesh.position.set(x, y, 0);
+            segmentMesh.rotation.z = midAngle + Math.PI / 2;
+            segmentMesh.castShadow = true;
+            segmentMesh.receiveShadow = true;
+            
+            this.game.renderer.add(segmentMesh);
+            this.meshes.push(segmentMesh);
+            
+            // Physics body for the segment
+            const halfExtents = { x: segmentLength / 2, y: thickness / 2, z: depth / 2 };
+            const body = this.game.physics.createBox(
+                halfExtents,
+                0,
+                { x, y, z: 0 },
+                { x: 0, y: 0, z: midAngle + Math.PI / 2 },
+                this.game.physics.materials.wall
+            );
+            
+            this.game.physics.addBody(body);
+            this.walls.push({ mesh: segmentMesh, body });
+        }
     }
 
     /**
@@ -501,12 +550,15 @@ export class Playfield {
         const vSpacing = cfg.VERTICAL_SPACING * 0.9;
         const hSpacing = cfg.HORIZONTAL_SPACING * 0.85;
         
-        // Skip zones for feature areas and pockets
+        // Skip zones for feature areas, pockets, and slot machine
         const SKIP_ZONES = {
             CENTER_FEATURE: { xRadius: 1.2, yMin: -1, yMax: 3.5 },
-            V_POCKET_CENTER: { xRadius: 0.8, yMax: -3 },
-            V_POCKET_LEFT: { xCenter: -3, xRadius: 0.6, yMin: -5, yMax: -2 },
-            V_POCKET_RIGHT: { xCenter: 3, xRadius: 0.6, yMin: -5, yMax: -2 },
+            // Skip area for slot machine (left of center, lower area)
+            SLOT_MACHINE: { xMin: -4, xMax: -0.5, yMin: -6, yMax: -2.5 },
+            // V-Pocket areas adjusted for new layout
+            V_POCKET_LEFT: { xCenter: -2.5, xRadius: 0.6, yMin: -4, yMax: -2 },
+            V_POCKET_CENTER: { xCenter: 1, xRadius: 0.6, yMin: -3.5, yMax: -1.5 },
+            V_POCKET_RIGHT: { xCenter: 4, xRadius: 0.6, yMin: -4.5, yMax: -2.5 },
             BUMPER_ZONES: [
                 { x: -3, y: 3, radius: 0.8 },
                 { x: 0, y: 4, radius: 0.8 },
@@ -539,15 +591,20 @@ export class Playfield {
                     y < SKIP_ZONES.CENTER_FEATURE.yMax && 
                     y > SKIP_ZONES.CENTER_FEATURE.yMin) skip = true;
                 
+                // Skip slot machine area (Requirement #2 - slot machine placement)
+                if (x >= SKIP_ZONES.SLOT_MACHINE.xMin && x <= SKIP_ZONES.SLOT_MACHINE.xMax &&
+                    y >= SKIP_ZONES.SLOT_MACHINE.yMin && y <= SKIP_ZONES.SLOT_MACHINE.yMax) skip = true;
+                
                 // Skip V-pocket areas
-                if (Math.abs(x) < SKIP_ZONES.V_POCKET_CENTER.xRadius && 
-                    y < SKIP_ZONES.V_POCKET_CENTER.yMax) skip = true;
-                if (Math.abs(x - SKIP_ZONES.V_POCKET_RIGHT.xCenter) < SKIP_ZONES.V_POCKET_RIGHT.xRadius && 
-                    y < SKIP_ZONES.V_POCKET_RIGHT.yMax && 
-                    y > SKIP_ZONES.V_POCKET_RIGHT.yMin) skip = true;
                 if (Math.abs(x - SKIP_ZONES.V_POCKET_LEFT.xCenter) < SKIP_ZONES.V_POCKET_LEFT.xRadius && 
                     y < SKIP_ZONES.V_POCKET_LEFT.yMax && 
                     y > SKIP_ZONES.V_POCKET_LEFT.yMin) skip = true;
+                if (Math.abs(x - SKIP_ZONES.V_POCKET_CENTER.xCenter) < SKIP_ZONES.V_POCKET_CENTER.xRadius && 
+                    y < SKIP_ZONES.V_POCKET_CENTER.yMax && 
+                    y > SKIP_ZONES.V_POCKET_CENTER.yMin) skip = true;
+                if (Math.abs(x - SKIP_ZONES.V_POCKET_RIGHT.xCenter) < SKIP_ZONES.V_POCKET_RIGHT.xRadius && 
+                    y < SKIP_ZONES.V_POCKET_RIGHT.yMax && 
+                    y > SKIP_ZONES.V_POCKET_RIGHT.yMin) skip = true;
                 
                 // Skip bumper zones
                 for (const bz of SKIP_ZONES.BUMPER_ZONES) {
@@ -1071,16 +1128,18 @@ export class Playfield {
     }
 
     /**
-     * Create jackpot funnel
+     * Create jackpot funnel - positioned above slot machine as per reference image
+     * The ball funnel funnels balls into the slot machine area
      */
     createFunnel() {
         const cfg = CONFIG.PLAYFIELD.FUNNEL;
-        const position = { x: 0, y: -5, z: 0 };
+        // Position funnel above the slot machine (centered, in middle-lower section)
+        const position = { x: -2, y: -2, z: 0 }; // Left of center, above slot machine
         
-        // Visual funnel (cone)
+        // Visual funnel (smaller cone to guide balls)
         const geometry = new THREE.ConeGeometry(
-            cfg.TOP_RADIUS,
-            cfg.HEIGHT,
+            cfg.TOP_RADIUS * 0.6, // Smaller funnel
+            cfg.HEIGHT * 0.8,
             24,
             1,
             true
@@ -1096,20 +1155,23 @@ export class Playfield {
         this.meshes.push(mesh);
         this.funnelMesh = mesh;
         
+        // Create ball catcher ring visual (like the reference image shows small circles at funnel)
+        this.createBallFunnelDecorations(position);
+        
         // Physics - create ring of bodies to guide balls
-        const numSegments = 12;
+        const numSegments = 10;
         for (let i = 0; i < numSegments; i++) {
             const angle = (i / numSegments) * Math.PI * 2;
-            const radius = cfg.TOP_RADIUS;
+            const radius = cfg.TOP_RADIUS * 0.5;
             
             const segPos = {
                 x: position.x + Math.cos(angle) * radius,
-                y: position.y + cfg.HEIGHT / 2,
+                y: position.y + cfg.HEIGHT / 3,
                 z: position.z + Math.sin(angle) * radius * 0.3
             };
             
             const body = this.game.physics.createBox(
-                { x: 0.2, y: cfg.HEIGHT / 2, z: 0.1 },
+                { x: 0.15, y: cfg.HEIGHT / 3, z: 0.1 },
                 0,
                 segPos,
                 { x: 0, y: angle, z: -Math.PI / 6 },
@@ -1121,6 +1183,37 @@ export class Playfield {
         
         // Create trigger at bottom
         this.createFunnelTrigger(position);
+    }
+    
+    /**
+     * Create decorative balls at the funnel entrance (as shown in reference)
+     */
+    createBallFunnelDecorations(funnelPosition) {
+        const decorBallRadius = 0.1;
+        const decorMaterial = new THREE.MeshStandardMaterial({
+            color: 0xcccccc,
+            metalness: 0.8,
+            roughness: 0.2
+        });
+        
+        // Create small decorative balls around the funnel opening
+        const numBalls = 8;
+        const ringRadius = 0.8;
+        
+        for (let i = 0; i < numBalls; i++) {
+            const angle = (i / numBalls) * Math.PI * 2;
+            const x = funnelPosition.x + Math.cos(angle) * ringRadius;
+            const y = funnelPosition.y + 0.6;
+            const z = funnelPosition.z + Math.sin(angle) * ringRadius * 0.3;
+            
+            const geometry = new THREE.SphereGeometry(decorBallRadius, 8, 8);
+            const mesh = new THREE.Mesh(geometry, decorMaterial);
+            mesh.position.set(x, y, z);
+            mesh.castShadow = true;
+            
+            this.game.renderer.add(mesh);
+            this.meshes.push(mesh);
+        }
     }
 
     /**
