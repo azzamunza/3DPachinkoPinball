@@ -140,7 +140,7 @@ class DancingDragonsGame {
         
         const reelStrip = CONFIG.REEL_STRIPS[reelIndex];
         // Create enough symbols to cover the full animation distance:
-        // We need (EXTRA_SPINS + 1) full cycles plus extra for the visible rows
+        // We need (EXTRA_SPINS + 2) full cycles plus extra for the visible rows
         // This ensures the reel doesn't run out of symbols during spinning
         const symbolsNeeded = (CONFIG.REELS.EXTRA_SPINS + 2) * reelStrip.length + CONFIG.REELS.ROWS;
         
