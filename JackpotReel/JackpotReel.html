@@ -397,8 +397,12 @@
             machineGroup.add(topPanel);
 
             // Chrome trims
-            machineGroup.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(17, 0.4, 0.5), chromeTrimMat), { position: new THREE.Vector3(0, 12.5, 2.5) }));
-            machineGroup.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(17, 0.4, 0.5), chromeTrimMat), { position: new THREE.Vector3(0, 7.5, 2.5) }));
+            const chromeTrim1 = new THREE.Mesh(new THREE.BoxGeometry(17, 0.4, 0.5), chromeTrimMat);
+            chromeTrim1.position.set(0, 12.5, 2.5);
+            machineGroup.add(chromeTrim1);
+            const chromeTrim2 = new THREE.Mesh(new THREE.BoxGeometry(17, 0.4, 0.5), chromeTrimMat);
+            chromeTrim2.position.set(0, 7.5, 2.5);
+            machineGroup.add(chromeTrim2);
 
             // Reel housing
             const reelHousing = new THREE.Mesh(new THREE.BoxGeometry(18, 10, 6), cabinetMat);
@@ -411,21 +415,37 @@
             machineGroup.add(reelCavity);
 
             // Frame
-            machineGroup.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(17, 1.2, 2), chromeTrimMat), { position: new THREE.Vector3(0, 6, 2) }));
-            machineGroup.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(17, 1.2, 2), chromeTrimMat), { position: new THREE.Vector3(0, -3, 2) }));
-            machineGroup.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(1.2, 10.4, 2), chromeTrimMat), { position: new THREE.Vector3(-8.4, 1.5, 2) }));
-            machineGroup.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(1.2, 10.4, 2), chromeTrimMat), { position: new THREE.Vector3(8.4, 1.5, 2) }));
+            const frame1 = new THREE.Mesh(new THREE.BoxGeometry(17, 1.2, 2), chromeTrimMat);
+            frame1.position.set(0, 6, 2);
+            machineGroup.add(frame1);
+            const frame2 = new THREE.Mesh(new THREE.BoxGeometry(17, 1.2, 2), chromeTrimMat);
+            frame2.position.set(0, -3, 2);
+            machineGroup.add(frame2);
+            const frame3 = new THREE.Mesh(new THREE.BoxGeometry(1.2, 10.4, 2), chromeTrimMat);
+            frame3.position.set(-8.4, 1.5, 2);
+            machineGroup.add(frame3);
+            const frame4 = new THREE.Mesh(new THREE.BoxGeometry(1.2, 10.4, 2), chromeTrimMat);
+            frame4.position.set(8.4, 1.5, 2);
+            machineGroup.add(frame4);
 
             // Orange accent strips
-            machineGroup.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(17.5, 0.3, 0.5), orangeAccentMat), { position: new THREE.Vector3(0, 6.8, 2.8) }));
-            machineGroup.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(17.5, 0.3, 0.5), orangeAccentMat), { position: new THREE.Vector3(0, -3.8, 2.8) }));
+            const orangeStrip1 = new THREE.Mesh(new THREE.BoxGeometry(17.5, 0.3, 0.5), orangeAccentMat);
+            orangeStrip1.position.set(0, 6.8, 2.8);
+            machineGroup.add(orangeStrip1);
+            const orangeStrip2 = new THREE.Mesh(new THREE.BoxGeometry(17.5, 0.3, 0.5), orangeAccentMat);
+            orangeStrip2.position.set(0, -3.8, 2.8);
+            machineGroup.add(orangeStrip2);
 
             // Glass
             const glassMat = new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: 0.0, roughness: 0, transmission: 0.95, opacity: 0.15, transparent: true, clearcoat: 1.0, ior: 1.5 });
-            machineGroup.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(15, 8, 0.3), glassMat), { position: new THREE.Vector3(0, 1.5, 3.2) }));
+            const glass = new THREE.Mesh(new THREE.BoxGeometry(15, 8, 0.3), glassMat);
+            glass.position.set(0, 1.5, 3.2);
+            machineGroup.add(glass);
 
             // Payline
-            machineGroup.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(16, 0.1, 0.15), new THREE.MeshBasicMaterial({ color: 0xff0000 })), { position: new THREE.Vector3(0, 1.5, 3.4) }));
+            const payline = new THREE.Mesh(new THREE.BoxGeometry(16, 0.1, 0.15), new THREE.MeshBasicMaterial({ color: 0xff0000 }));
+            payline.position.set(0, 1.5, 3.4);
+            machineGroup.add(payline);
 
             // Button deck
             const deck = new THREE.Mesh(new THREE.BoxGeometry(18, 3, 8), blackPlasticMat);
@@ -442,8 +462,12 @@
             machineGroup.add(bellyPanel);
 
             // Side panels
-            machineGroup.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(0.5, 22, 8), cabinetMat), { position: new THREE.Vector3(-9.25, 1, 0) }));
-            machineGroup.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(0.5, 22, 8), cabinetMat), { position: new THREE.Vector3(9.25, 1, 0) }));
+            const sidePanel1 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 22, 8), cabinetMat);
+            sidePanel1.position.set(-9.25, 1, 0);
+            machineGroup.add(sidePanel1);
+            const sidePanel2 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 22, 8), cabinetMat);
+            sidePanel2.position.set(9.25, 1, 0);
+            machineGroup.add(sidePanel2);
 
             // Lever
             leverGroup = new THREE.Group();
@@ -483,8 +507,12 @@
 
             // Reel dividers
             const dividerMat = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.5, roughness: 0.4 });
-            machineGroup.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(0.2, 8, 3), dividerMat), { position: new THREE.Vector3(-2.5, 1.5, 1.5) }));
-            machineGroup.add(Object.assign(new THREE.Mesh(new THREE.BoxGeometry(0.2, 8, 3), dividerMat), { position: new THREE.Vector3(2.5, 1.5, 1.5) }));
+            const divider1 = new THREE.Mesh(new THREE.BoxGeometry(0.2, 8, 3), dividerMat);
+            divider1.position.set(-2.5, 1.5, 1.5);
+            machineGroup.add(divider1);
+            const divider2 = new THREE.Mesh(new THREE.BoxGeometry(0.2, 8, 3), dividerMat);
+            divider2.position.set(2.5, 1.5, 1.5);
+            machineGroup.add(divider2);
 
             // Ball slot
             const slotFrame = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2.2, 0.4), chromeTrimMat);
