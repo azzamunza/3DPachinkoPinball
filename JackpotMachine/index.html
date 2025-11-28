@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dancing Dragons Jackpot Machine | Pachinko Pinball Edition</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading-screen">
+        <div class="dragon-loader">
+            <div class="dragon-icon">🐉</div>
+            <div class="loader-text">Loading Dancing Dragons...</div>
+            <div class="loader-bar">
+                <div class="loader-progress"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Game Container -->
+    <div id="game-container">
+        <!-- Header with Title and Balance -->
+        <header id="game-header">
+            <div class="header-left">
+                <h1 class="game-title">
+                    <span class="dragon-emoji">🐉</span>
+                    Dancing Dragons
+                    <span class="dragon-emoji">🐉</span>
+                </h1>
+                <p class="game-subtitle">Pachinko Pinball Edition</p>
+            </div>
+            <div class="header-right">
+                <div class="balance-display">
+                    <span class="balance-label">BALANCE</span>
+                    <span id="balance-value" class="balance-value">10,000</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Slot Machine Area -->
+        <main id="slot-machine">
+            <!-- Decorative Dragon Frame -->
+            <div class="machine-frame">
+                <div class="frame-corner top-left"></div>
+                <div class="frame-corner top-right"></div>
+                <div class="frame-corner bottom-left"></div>
+                <div class="frame-corner bottom-right"></div>
+                
+                <!-- Win Display -->
+                <div id="win-display" class="hidden">
+                    <span id="win-amount">0</span>
+                </div>
+
+                <!-- Reels Container -->
+                <div id="reels-container">
+                    <!-- Paylines Overlay -->
+                    <svg id="paylines-svg" class="paylines-overlay"></svg>
+                    
+                    <!-- 5 Reels -->
+                    <div class="reel" id="reel-0">
+                        <div class="reel-strip"></div>
+                    </div>
+                    <div class="reel" id="reel-1">
+                        <div class="reel-strip"></div>
+                    </div>
+                    <div class="reel" id="reel-2">
+                        <div class="reel-strip"></div>
+                    </div>
+                    <div class="reel" id="reel-3">
+                        <div class="reel-strip"></div>
+                    </div>
+                    <div class="reel" id="reel-4">
+                        <div class="reel-strip"></div>
+                    </div>
+                </div>
+                
+                <!-- Expanding Wild Animation Overlay -->
+                <div id="expanding-wild-overlay" class="hidden"></div>
+            </div>
+        </main>
+
+        <!-- Control Panel -->
+        <footer id="control-panel">
+            <div class="controls-row">
+                <!-- Bet Controls -->
+                <div class="control-group bet-controls">
+                    <label class="control-label">BET</label>
+                    <div class="bet-buttons">
+                        <button id="btn-bet-down" class="control-btn small">−</button>
+                        <span id="bet-value" class="value-display">10</span>
+                        <button id="btn-bet-up" class="control-btn small">+</button>
+                    </div>
+                </div>
+
+                <!-- Lines Display (Fixed at 10) -->
+                <div class="control-group lines-display">
+                    <label class="control-label">LINES</label>
+                    <span id="lines-value" class="value-display">10</span>
+                </div>
+
+                <!-- Total Bet -->
+                <div class="control-group total-bet">
+                    <label class="control-label">TOTAL BET</label>
+                    <span id="total-bet-value" class="value-display">100</span>
+                </div>
+
+                <!-- Spin Button -->
+                <button id="btn-spin" class="spin-btn">
+                    <span class="spin-text">SPIN</span>
+                    <span class="spin-icon">🐉</span>
+                </button>
+
+                <!-- Auto Spin -->
+                <div class="control-group auto-controls">
+                    <button id="btn-auto-spin" class="control-btn">AUTO</button>
+                    <button id="btn-max-bet" class="control-btn">MAX</button>
+                </div>
+            </div>
+
+            <!-- Win Lines Indicator -->
+            <div class="payline-indicators">
+                <div class="payline-indicator" data-line="1">1</div>
+                <div class="payline-indicator" data-line="2">2</div>
+                <div class="payline-indicator" data-line="3">3</div>
+                <div class="payline-indicator" data-line="4">4</div>
+                <div class="payline-indicator" data-line="5">5</div>
+                <div class="payline-indicator" data-line="6">6</div>
+                <div class="payline-indicator" data-line="7">7</div>
+                <div class="payline-indicator" data-line="8">8</div>
+                <div class="payline-indicator" data-line="9">9</div>
+                <div class="payline-indicator" data-line="10">10</div>
+            </div>
+        </footer>
+
+        <!-- Gamble Feature Modal -->
+        <div id="gamble-modal" class="modal hidden">
+            <div class="modal-content gamble-content">
+                <h2 class="modal-title">🎲 GAMBLE FEATURE 🎲</h2>
+                <div class="gamble-display">
+                    <div class="gamble-card" id="gamble-card">?</div>
+                    <div class="gamble-info">
+                        <p>Win Amount: <span id="gamble-win">0</span></p>
+                        <p>Potential Win: <span id="gamble-potential">0</span></p>
+                    </div>
+                </div>
+                <div class="gamble-buttons">
+                    <button id="btn-gamble-red" class="gamble-btn red">RED</button>
+                    <button id="btn-gamble-black" class="gamble-btn black">BLACK</button>
+                    <button id="btn-collect" class="gamble-btn collect">COLLECT</button>
+                </div>
+                <div class="gamble-history">
+                    <span class="history-label">History:</span>
+                    <div id="gamble-history-cards"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Paytable Modal -->
+        <div id="paytable-modal" class="modal hidden">
+            <div class="modal-content paytable-content">
+                <button id="close-paytable" class="close-btn">×</button>
+                <h2 class="modal-title">🐉 PAYTABLE 🐉</h2>
+                <div id="paytable-grid"></div>
+                <div class="paylines-info">
+                    <h3>Paylines</h3>
+                    <div id="paylines-diagram"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Button -->
+        <button id="btn-settings" class="floating-btn settings">⚙️</button>
+        <button id="btn-paytable" class="floating-btn paytable">📋</button>
+        <button id="btn-sound" class="floating-btn sound">🔊</button>
+
+        <!-- Win Celebration Overlay -->
+        <div id="celebration-overlay" class="hidden">
+            <div class="celebration-content">
+                <h2 id="celebration-title">BIG WIN!</h2>
+                <div id="celebration-amount">0</div>
+                <div class="celebration-dragons">
+                    <span class="flying-dragon">🐉</span>
+                    <span class="flying-dragon">🐲</span>
+                    <span class="flying-dragon">🐉</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Audio Elements (procedurally generated via Web Audio API) -->
+    
+    <!-- Game Scripts -->
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>
