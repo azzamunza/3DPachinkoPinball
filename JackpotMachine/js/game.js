@@ -139,10 +139,13 @@ class DancingDragonsGame {
         strip.innerHTML = '';
         
         const reelStrip = CONFIG.REEL_STRIPS[reelIndex];
-        const symbolsToShow = CONFIG.REELS.ROWS + 2; // Extra for smooth scrolling
+        // Create enough symbols to cover the full animation distance:
+        // We need (EXTRA_SPINS + 1) full cycles plus extra for the visible rows
+        // This ensures the reel doesn't run out of symbols during spinning
+        const symbolsNeeded = (CONFIG.REELS.EXTRA_SPINS + 2) * reelStrip.length + CONFIG.REELS.ROWS;
         
         // Create symbol elements
-        for (let i = 0; i < reelStrip.length + symbolsToShow; i++) {
+        for (let i = 0; i < symbolsNeeded; i++) {
             const symbolId = reelStrip[i % reelStrip.length];
             const symbolEl = this.createSymbolElement(symbolId);
             strip.appendChild(symbolEl);
