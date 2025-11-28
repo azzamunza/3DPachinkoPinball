@@ -396,6 +396,8 @@ export class Playfield {
         const startAngle = 0; // Start from left (pointing right)
         const endAngle = Math.PI; // End at right (half circle)
         const depth = CONFIG.PLAYFIELD.DEPTH;
+        // Segment overlap factor to ensure no gaps between wall segments
+        const SEGMENT_OVERLAP_FACTOR = 1.1;
         
         for (let i = 0; i < numSegments; i++) {
             const angle1 = startAngle + (endAngle - startAngle) * (i / numSegments);
@@ -406,8 +408,8 @@ export class Playfield {
             const x = Math.cos(midAngle) * radius;
             const y = centerY + Math.sin(midAngle) * radius;
             
-            // Calculate segment length
-            const segmentLength = radius * (angle2 - angle1) * 1.1;
+            // Calculate segment length with overlap to prevent gaps
+            const segmentLength = radius * (angle2 - angle1) * SEGMENT_OVERLAP_FACTOR;
             
             // Create wall segment
             const segmentGeo = new THREE.BoxGeometry(segmentLength, thickness, depth);

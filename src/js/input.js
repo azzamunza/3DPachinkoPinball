@@ -188,7 +188,7 @@ export class InputManager {
         saveBtn.textContent = 'Saving...';
         saveBtn.classList.add('saving');
         
-        // Save to localStorage as fallback
+        // Save to localStorage
         const offset = { x: offsetX, y: offsetY };
         localStorage.setItem('cannonOffset', JSON.stringify(offset));
         
@@ -198,17 +198,15 @@ export class InputManager {
             this.game.cannon.offsetY = offsetY;
         }
         
-        // Attempt to save to GitHub config.json
-        // Note: This requires GitHub token which is not directly available in the browser
-        // This is a placeholder that shows the intent - actual implementation would need
-        // server-side support or GitHub Actions workflow
+        // Save configuration to localStorage
+        // Note: Saving to GitHub repo would require server-side authentication
+        // which is beyond the scope of client-side JavaScript
         try {
             const configData = {
                 cannonOffset: offset,
                 lastUpdated: new Date().toISOString()
             };
             
-            // Store in localStorage for now (GitHub API requires authentication)
             localStorage.setItem('gameConfig', JSON.stringify(configData));
             
             // Success feedback
@@ -223,7 +221,7 @@ export class InputManager {
                 }, 2000);
             }, 500);
             
-            console.log('Cannon offset saved:', offset);
+            console.log('Cannon offset saved to localStorage:', offset);
         } catch (error) {
             console.error('Failed to save cannon offset:', error);
             saveBtn.textContent = 'Error';
