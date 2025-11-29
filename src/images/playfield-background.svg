@@ -1,0 +1,145 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 1600">
+  <defs>
+    <!-- Wood grain gradient -->
+    <linearGradient id="woodGrain" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#8B6914"/>
+      <stop offset="30%" style="stop-color:#A67C00"/>
+      <stop offset="50%" style="stop-color:#8B6914"/>
+      <stop offset="70%" style="stop-color:#A67C00"/>
+      <stop offset="100%" style="stop-color:#8B6914"/>
+    </linearGradient>
+    
+    <!-- Cosmic corner gradients -->
+    <radialGradient id="cornerTopLeft" cx="0%" cy="0%" r="40%">
+      <stop offset="0%" style="stop-color:rgba(80, 20, 80, 0.8)"/>
+      <stop offset="50%" style="stop-color:rgba(60, 10, 60, 0.5)"/>
+      <stop offset="100%" style="stop-color:transparent"/>
+    </radialGradient>
+    
+    <radialGradient id="cornerTopRight" cx="100%" cy="0%" r="40%">
+      <stop offset="0%" style="stop-color:rgba(80, 20, 80, 0.8)"/>
+      <stop offset="50%" style="stop-color:rgba(60, 10, 60, 0.5)"/>
+      <stop offset="100%" style="stop-color:transparent"/>
+    </radialGradient>
+    
+    <radialGradient id="cornerBottomLeft" cx="0%" cy="100%" r="30%">
+      <stop offset="0%" style="stop-color:rgba(80, 20, 80, 0.6)"/>
+      <stop offset="100%" style="stop-color:transparent"/>
+    </radialGradient>
+    
+    <radialGradient id="cornerBottomRight" cx="100%" cy="100%" r="30%">
+      <stop offset="0%" style="stop-color:rgba(80, 20, 80, 0.6)"/>
+      <stop offset="100%" style="stop-color:transparent"/>
+    </radialGradient>
+    
+    <!-- Center glow -->
+    <radialGradient id="centerGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:rgba(255, 215, 0, 0.08)"/>
+      <stop offset="100%" style="stop-color:transparent"/>
+    </radialGradient>
+    
+    <!-- Vignette -->
+    <radialGradient id="vignette" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" style="stop-color:transparent"/>
+      <stop offset="60%" style="stop-color:transparent"/>
+      <stop offset="100%" style="stop-color:rgba(0, 0, 0, 0.5)"/>
+    </radialGradient>
+    
+    <!-- Neon glow filter -->
+    <filter id="neonGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Base wooden texture -->
+  <rect width="1400" height="1600" fill="url(#woodGrain)"/>
+  
+  <!-- Wood grain lines -->
+  <g stroke="rgba(139, 90, 43, 0.3)" stroke-width="1" fill="none">
+    <path d="M 0 80 Q 700 75 1400 85"/>
+    <path d="M 0 160 Q 700 165 1400 155"/>
+    <path d="M 0 240 Q 700 235 1400 245"/>
+    <path d="M 0 320 Q 700 325 1400 315"/>
+    <path d="M 0 400 Q 700 395 1400 405"/>
+    <path d="M 0 480 Q 700 485 1400 475"/>
+    <path d="M 0 560 Q 700 555 1400 565"/>
+    <path d="M 0 640 Q 700 645 1400 635"/>
+    <path d="M 0 720 Q 700 715 1400 725"/>
+    <path d="M 0 800 Q 700 805 1400 795"/>
+    <path d="M 0 880 Q 700 875 1400 885"/>
+    <path d="M 0 960 Q 700 965 1400 955"/>
+    <path d="M 0 1040 Q 700 1035 1400 1045"/>
+    <path d="M 0 1120 Q 700 1125 1400 1115"/>
+    <path d="M 0 1200 Q 700 1195 1400 1205"/>
+    <path d="M 0 1280 Q 700 1285 1400 1275"/>
+    <path d="M 0 1360 Q 700 1355 1400 1365"/>
+    <path d="M 0 1440 Q 700 1445 1400 1435"/>
+    <path d="M 0 1520 Q 700 1515 1400 1525"/>
+  </g>
+  
+  <!-- Cosmic dark blue accents -->
+  <g fill="rgba(10, 20, 50, 0.7)">
+    <!-- Left wing shape -->
+    <path d="M 600 800 Q 200 600 100 500 Q 0 900 400 1100 Q 550 950 600 800 Z"/>
+    <!-- Right wing shape -->
+    <path d="M 800 800 Q 1200 600 1300 500 Q 1400 900 1000 1100 Q 850 950 800 800 Z"/>
+    <!-- Upper curve -->
+    <path d="M 500 300 Q 600 150 700 150 Q 900 150 900 300 Q 800 400 600 400 Q 500 350 500 300 Z"/>
+  </g>
+  
+  <!-- Corner cosmic zones -->
+  <rect x="0" y="0" width="560" height="480" fill="url(#cornerTopLeft)"/>
+  <rect x="840" y="0" width="560" height="480" fill="url(#cornerTopRight)"/>
+  <rect x="0" y="1120" width="420" height="480" fill="url(#cornerBottomLeft)"/>
+  <rect x="980" y="1120" width="420" height="480" fill="url(#cornerBottomRight)"/>
+  
+  <!-- Center glow -->
+  <ellipse cx="700" cy="800" rx="500" ry="500" fill="url(#centerGlow)"/>
+  
+  <!-- Neon grid lines -->
+  <g stroke="rgba(0, 240, 255, 0.03)" stroke-width="1">
+    <line x1="0" y1="133" x2="1400" y2="133"/>
+    <line x1="0" y1="267" x2="1400" y2="267"/>
+    <line x1="0" y1="400" x2="1400" y2="400"/>
+    <line x1="0" y1="533" x2="1400" y2="533"/>
+    <line x1="0" y1="667" x2="1400" y2="667"/>
+    <line x1="0" y1="800" x2="1400" y2="800"/>
+    <line x1="0" y1="933" x2="1400" y2="933"/>
+    <line x1="0" y1="1067" x2="1400" y2="1067"/>
+    <line x1="0" y1="1200" x2="1400" y2="1200"/>
+    <line x1="0" y1="1333" x2="1400" y2="1333"/>
+    <line x1="0" y1="1467" x2="1400" y2="1467"/>
+  </g>
+  
+  <!-- PACHINKO header text -->
+  <text x="700" y="96" font-family="Arial, sans-serif" font-size="80" font-weight="bold" 
+        text-anchor="middle" fill="url(#woodGrain)" filter="url(#neonGlow)">
+    <tspan fill="#C0C0C0">PACHINKO</tspan>
+  </text>
+  
+  <!-- Catcher zone labels at bottom -->
+  <g font-family="Arial, sans-serif" font-size="28" font-weight="bold" text-anchor="middle">
+    <text x="168" y="1472" fill="rgba(255, 215, 0, 0.6)">50</text>
+    <text x="420" y="1472" fill="rgba(255, 215, 0, 0.6)">100</text>
+    <text x="700" y="1472" fill="rgba(255, 50, 50, 0.8)">JACKPOT</text>
+    <text x="980" y="1472" fill="rgba(255, 215, 0, 0.6)">100</text>
+    <text x="1232" y="1472" fill="rgba(255, 215, 0, 0.6)">50</text>
+  </g>
+  
+  <!-- Side arrows -->
+  <g stroke="rgba(255, 165, 0, 0.3)" stroke-width="3" fill="none">
+    <path d="M 140 770 L 160 800 L 140 830"/>
+    <path d="M 1260 770 L 1240 800 L 1260 830"/>
+  </g>
+  
+  <!-- Decorative glow circles -->
+  <circle cx="210" cy="480" r="100" fill="url(#cornerTopLeft)" opacity="0.1"/>
+  <circle cx="1190" cy="480" r="100" fill="url(#cornerTopRight)" opacity="0.1"/>
+  
+  <!-- Vignette overlay -->
+  <rect width="1400" height="1600" fill="url(#vignette)"/>
+</svg>

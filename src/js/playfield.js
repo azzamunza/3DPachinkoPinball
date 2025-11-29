@@ -241,16 +241,19 @@ export class Playfield {
      * Create the backboard (playing surface) with procedurally generated background
      * Includes starfield, arcade-style geometric patterns, neon grid lines,
      * decorative elements, and vignette effect
+     * Also loads from images/playfield-background.svg if available
      */
     createBackboard() {
         const width = CONFIG.PLAYFIELD.WIDTH;
         const height = CONFIG.PLAYFIELD.HEIGHT;
         
-        // Generate background texture
+        // Try to load background image first, fallback to procedural generation
+        const loader = new THREE.TextureLoader();
+        
+        // Visual backboard with generated texture (always generate as fallback)
+        const geometry = new THREE.PlaneGeometry(width, height);
         const backgroundTexture = this.generateBackgroundTexture(width, height);
         
-        // Visual backboard with generated texture
-        const geometry = new THREE.PlaneGeometry(width, height);
         const material = new THREE.MeshStandardMaterial({
             map: backgroundTexture,
             metalness: 0.1,
@@ -264,6 +267,20 @@ export class Playfield {
         this.game.renderer.add(mesh);
         this.meshes.push(mesh);
         this.backboardMesh = mesh;
+        
+        // Try to load the SVG background image (will use procedural if loading fails)
+        loader.load(
+            'images/playfield-background.svg',
+            (texture) => {
+                console.log('Loaded background image: images/playfield-background.svg');
+                material.map = texture;
+                material.needsUpdate = true;
+            },
+            undefined,
+            (error) => {
+                console.log('Using procedural background texture (image not found)');
+            }
+        );
         
         // Add decorative patterns
         this.addBackboardDecorations(width, height);
@@ -1592,7 +1609,7 @@ export class Playfield {
     }
 
     /**
-     * Create a return ramp that takes balls back to the top (Requirement #9)
+     * Create a return ramp that provides lift for balls (shorter ramp - balls propelled through air)
      */
     createReturnRamp(side) {
         const isLeft = side === 'left';
@@ -1605,20 +1622,22 @@ export class Playfield {
         const entranceX = isLeft ? flipperX + 2 : flipperX - 2;
         const entranceY = flipperY + 1;
         
-        // Create curved ramp using multiple segments
+        // Create SHORT curved ramp using fewer segments - only provides lift
+        // Balls are propelled through the air to the top
         const rampWidth = 0.8;
         const rampHeight = 0.15;
-        const numSegments = 8;
+        const numSegments = 3; // Reduced from 8 to 3 for shorter ramp
         
-        // Calculate ramp path - curves up and inward toward top center
+        // Calculate short ramp path - only provides initial lift
         const rampPoints = [];
         for (let i = 0; i <= numSegments; i++) {
             const t = i / numSegments;
             
-            // Curve from flipper area to top of playfield
-            const x = entranceX + (isLeft ? 1 : -1) * t * (CONFIG.PLAYFIELD.WIDTH / 4);
-            const y = entranceY + t * (CONFIG.PLAYFIELD.HEIGHT * 0.7);
-            const z = 0.1 + t * 0.3; // Rises above the playfield slightly
+            // Short ramp - only goes up about 20% of playfield height (instead of 70%)
+            // The steeper angle propels balls through the air to the top
+            const x = entranceX + (isLeft ? 1 : -1) * t * (CONFIG.PLAYFIELD.WIDTH / 12);
+            const y = entranceY + t * (CONFIG.PLAYFIELD.HEIGHT * 0.2);
+            const z = 0.1 + t * 0.5; // Steeper rise for better lift
             
             rampPoints.push({ x, y, z });
         }
