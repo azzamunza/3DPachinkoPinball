@@ -838,195 +838,154 @@ export class Playfield {
     }
 
     /**
-     * Create peg field - Authentic Pachinko style with curved arrangements
-     * Based on reference images: curved rows, denser packing, symmetrical arches, and funnel patterns
+     * Create peg field - Dense silver Pachinko pins like reference image
+     * Reference: small silver pins densely packed across central area
      */
     createPegs() {
         const cfg = CONFIG.PLAYFIELD.PEGS;
+        const width = CONFIG.PLAYFIELD.WIDTH;
+        const height = CONFIG.PLAYFIELD.HEIGHT;
         
-        // Create golden/brass colored pegs for authentic look
-        const goldenMaterial = this.game.renderer.createMaterial({
-            ...CONFIG.MATERIALS.PEG,
-            color: 0xd4a84b, // Golden brass color
-            metalness: 0.7,
-            roughness: 0.3
-        });
-        
-        // Silver accent pegs for special paths
+        // Silver pins (like reference image)
         const silverMaterial = this.game.renderer.createMaterial({
             ...CONFIG.MATERIALS.PEG,
-            color: 0xc0c0c0, // Silver color
-            metalness: 0.8,
+            color: 0xC0C0C0, // Silver
+            metalness: 0.9,
+            roughness: 0.15
+        });
+        
+        // Gold accent pins for rails/guides
+        const goldMaterial = this.game.renderer.createMaterial({
+            ...CONFIG.MATERIALS.PEG,
+            color: 0xD4A84B, // Gold
+            metalness: 0.85,
             roughness: 0.2
         });
         
-        // === TOP SYMMETRICAL ARCHES (Entry distribution area) ===
-        // Create multiple symmetrical curved rows at the top like authentic Pachinko
-        this.createSymmetricalArch(8.0, 5.0, 14, goldenMaterial);   // Top wide arch
-        this.createSymmetricalArch(7.0, 4.5, 16, silverMaterial);   // Second arch
-        this.createSymmetricalArch(6.0, 4.0, 18, goldenMaterial);   // Third arch
-        this.createSymmetricalArch(5.0, 3.5, 16, silverMaterial);   // Fourth arch
-        
-        // === ANGLED ROWS WITH INTERMITTENT SPACES (Mid-upper zone) ===
-        // Create angled rows that cause balls to drop down at intervals
-        this.createAngledRowWithGaps(-4.5, 4.0, 2.5, 4.3, 10, 3, goldenMaterial, 'left');
-        this.createAngledRowWithGaps(4.5, 4.0, -2.5, 4.3, 10, 3, goldenMaterial, 'right');
-        this.createAngledRowWithGaps(-4.0, 3.2, 2.0, 3.5, 9, 2, silverMaterial, 'left');
-        this.createAngledRowWithGaps(4.0, 3.2, -2.0, 3.5, 9, 2, silverMaterial, 'right');
-        
-        // === MIDDLE ZONE (Main playing field with staggered grid) ===
-        const startY = 3.0;
-        const endY = -1.5;
-        const vSpacing = cfg.VERTICAL_SPACING * 0.9;
-        const hSpacing = cfg.HORIZONTAL_SPACING * 0.85;
-        
-        // Skip zones for feature areas, pockets, and slot machine
+        // Skip zones for slot machine, bumpers, and pockets
         const SKIP_ZONES = {
-            CENTER_FEATURE: { xRadius: 1.2, yMin: -1, yMax: 3.5 },
-            // Skip area for slot machine (left of center, lower area)
-            SLOT_MACHINE: { xMin: -4, xMax: -0.5, yMin: -6, yMax: -2.5 },
-            // V-Pocket areas adjusted for new layout
-            V_POCKET_LEFT: { xCenter: -2.5, xRadius: 0.6, yMin: -4, yMax: -2 },
-            V_POCKET_CENTER: { xCenter: 1, xRadius: 0.6, yMin: -3.5, yMax: -1.5 },
-            V_POCKET_RIGHT: { xCenter: 4, xRadius: 0.6, yMin: -4.5, yMax: -2.5 },
-            BUMPER_ZONES: [
-                { x: -3, y: 3, radius: 0.8 },
-                { x: 0, y: 4, radius: 0.8 },
-                { x: 3, y: 3, radius: 0.8 },
-                { x: -2, y: 1, radius: 0.8 },
-                { x: 2, y: 1, radius: 0.8 },
-                { x: 0, y: 2, radius: 0.8 }
+            // Central slot machine area
+            SLOT_MACHINE: { 
+                xMin: -2.2, 
+                xMax: 2.2, 
+                yMin: -1.8, 
+                yMax: 1.8 
+            },
+            // Bumper positions
+            BUMPERS: [
+                { x: -3, y: 4, radius: 0.7 },
+                { x: 3, y: 4, radius: 0.7 }
+            ],
+            // V-Pocket catchment areas
+            V_POCKETS: [
+                { x: -3, y: -2, radius: 0.6 },
+                { x: 0, y: -1.5, radius: 0.8 },
+                { x: 3, y: -2, radius: 0.6 }
             ]
         };
+        
+        // === DENSE PIN GRID (Main playfield) ===
+        const vSpacing = cfg.VERTICAL_SPACING;
+        const hSpacing = cfg.HORIZONTAL_SPACING;
+        const startY = height / 2 - 2;  // Start from top (below header)
+        const endY = -height / 2 + 3;   // End above catchers
         
         let row = 0;
         for (let y = startY; y > endY; y -= vSpacing) {
             const isStaggered = row % 2 === 1;
             const offset = isStaggered ? hSpacing / 2 : 0;
             
-            // Vary row width based on position (narrower at bottom for funnel effect)
-            const rowProgress = (startY - y) / (startY - endY);
-            const maxPegs = Math.floor(14 - rowProgress * 4);
-            const rowWidth = (maxPegs - 1) * hSpacing;
-            const startX = -rowWidth / 2 + offset;
+            // Narrower at top and bottom, wider in middle
+            const rowProgress = Math.abs(y) / (height / 2);
+            const rowWidth = (width - 2) * (1 - rowProgress * 0.3);
+            const numPegs = Math.floor(rowWidth / hSpacing);
+            const startX = -(numPegs - 1) * hSpacing / 2 + offset;
             
-            for (let i = 0; i < maxPegs; i++) {
+            for (let i = 0; i < numPegs; i++) {
                 const x = startX + i * hSpacing;
                 
-                // Check if we should skip this position
+                // Check if should skip this position
                 let skip = false;
                 
-                // Skip center feature zone
-                if (Math.abs(x) < SKIP_ZONES.CENTER_FEATURE.xRadius && 
-                    y < SKIP_ZONES.CENTER_FEATURE.yMax && 
-                    y > SKIP_ZONES.CENTER_FEATURE.yMin) skip = true;
-                
-                // Skip slot machine area (Requirement #2 - slot machine placement)
-                if (x >= SKIP_ZONES.SLOT_MACHINE.xMin && x <= SKIP_ZONES.SLOT_MACHINE.xMax &&
-                    y >= SKIP_ZONES.SLOT_MACHINE.yMin && y <= SKIP_ZONES.SLOT_MACHINE.yMax) skip = true;
-                
-                // Skip V-pocket areas
-                if (Math.abs(x - SKIP_ZONES.V_POCKET_LEFT.xCenter) < SKIP_ZONES.V_POCKET_LEFT.xRadius && 
-                    y < SKIP_ZONES.V_POCKET_LEFT.yMax && 
-                    y > SKIP_ZONES.V_POCKET_LEFT.yMin) skip = true;
-                if (Math.abs(x - SKIP_ZONES.V_POCKET_CENTER.xCenter) < SKIP_ZONES.V_POCKET_CENTER.xRadius && 
-                    y < SKIP_ZONES.V_POCKET_CENTER.yMax && 
-                    y > SKIP_ZONES.V_POCKET_CENTER.yMin) skip = true;
-                if (Math.abs(x - SKIP_ZONES.V_POCKET_RIGHT.xCenter) < SKIP_ZONES.V_POCKET_RIGHT.xRadius && 
-                    y < SKIP_ZONES.V_POCKET_RIGHT.yMax && 
-                    y > SKIP_ZONES.V_POCKET_RIGHT.yMin) skip = true;
+                // Skip slot machine area
+                if (x >= SKIP_ZONES.SLOT_MACHINE.xMin && 
+                    x <= SKIP_ZONES.SLOT_MACHINE.xMax &&
+                    y >= SKIP_ZONES.SLOT_MACHINE.yMin && 
+                    y <= SKIP_ZONES.SLOT_MACHINE.yMax) {
+                    skip = true;
+                }
                 
                 // Skip bumper zones
-                for (const bz of SKIP_ZONES.BUMPER_ZONES) {
+                for (const bz of SKIP_ZONES.BUMPERS) {
                     const dist = Math.sqrt(Math.pow(x - bz.x, 2) + Math.pow(y - bz.y, 2));
                     if (dist < bz.radius) skip = true;
                 }
                 
+                // Skip V-pocket zones
+                for (const vp of SKIP_ZONES.V_POCKETS) {
+                    const dist = Math.sqrt(Math.pow(x - vp.x, 2) + Math.pow(y - vp.y, 2));
+                    if (dist < vp.radius) skip = true;
+                }
+                
+                // Skip outer edges
+                if (Math.abs(x) > width / 2 - 1) skip = true;
+                
                 if (!skip) {
-                    this.createPeg({ x, y, z: 0 }, goldenMaterial);
+                    this.createPeg({ x, y, z: 0 }, silverMaterial);
                 }
             }
             row++;
         }
         
-        // === SYMMETRICAL FUNNEL GUIDES (Lower zone) ===
-        // Create V-shaped funnel pegs to guide balls toward center
-        this.createSymmetricalFunnel(0, -2, 5.0, 3.0, 8, silverMaterial);
+        // === TOP CURVED ARCHES (Entry distribution) ===
+        this.createCurvedPegArch(height / 2 - 1.5, width / 2 - 1, 16, goldMaterial);
+        this.createCurvedPegArch(height / 2 - 2.2, width / 2 - 1.5, 14, silverMaterial);
         
-        // === SIDE CURVED CHANNELS ===
-        // Create curved channel pegs on sides to direct ball flow
-        this.createCurvedChannelPegs(-5.0, 4.0, -4.0, 0, 10, goldenMaterial, 'left');
-        this.createCurvedChannelPegs(5.0, 4.0, 4.0, 0, 10, goldenMaterial, 'right');
+        // === FUNNEL GUIDES toward slot machine ===
+        // Left funnel
+        for (let i = 0; i < 6; i++) {
+            const t = i / 5;
+            const x = -4 + t * 1.5;
+            const y = 3 - t * 3;
+            this.createPeg({ x, y, z: 0 }, goldMaterial);
+        }
+        // Right funnel
+        for (let i = 0; i < 6; i++) {
+            const t = i / 5;
+            const x = 4 - t * 1.5;
+            const y = 3 - t * 3;
+            this.createPeg({ x, y, z: 0 }, goldMaterial);
+        }
         
-        // === LOWER FUNNEL ZONE PEGS ===
-        // Additional funnel pegs toward center and side pockets
-        this.createFunnelPegs(-4.0, -2.5, goldenMaterial);
-        this.createFunnelPegs(4.0, -2.5, goldenMaterial);
+        // === LOWER GUIDES toward catchers ===
+        // Left guide
+        for (let i = 0; i < 5; i++) {
+            const t = i / 4;
+            const x = -4 + t * 0.5;
+            const y = -3 - t * 2;
+            this.createPeg({ x, y, z: 0 }, goldMaterial);
+        }
+        // Right guide
+        for (let i = 0; i < 5; i++) {
+            const t = i / 4;
+            const x = 4 - t * 0.5;
+            const y = -3 - t * 2;
+            this.createPeg({ x, y, z: 0 }, goldMaterial);
+        }
+        // Center guides
+        for (let i = 0; i < 4; i++) {
+            const t = i / 3;
+            this.createPeg({ x: -1.5 - t * 0.3, y: -2 - t * 2.5, z: 0 }, goldMaterial);
+            this.createPeg({ x: 1.5 + t * 0.3, y: -2 - t * 2.5, z: 0 }, goldMaterial);
+        }
         
-        // === BOTTOM DROP PATHS ===
-        // Create paths that lead to jackpot funnel
-        this.createDropPath(-1.5, -3, -0.5, -5, 6, silverMaterial);
-        this.createDropPath(1.5, -3, 0.5, -5, 6, silverMaterial);
-        
-        console.log(`Created ${this.pegs.length} pegs (authentic Pachinko layout with symmetrical arches)`);
+        console.log(`Created ${this.pegs.length} silver pins (dense Pachinko layout)`);
     }
     
     /**
-     * Create a symmetrical arch of pegs (like authentic Pachinko)
+     * Create curved arch of pegs at top
      */
-    createSymmetricalArch(centerY, radius, numPegs, material) {
-        const startAngle = Math.PI * 0.1;
-        const endAngle = Math.PI * 0.9;
-        const angleStep = (endAngle - startAngle) / (numPegs - 1);
-        
-        for (let i = 0; i < numPegs; i++) {
-            const angle = startAngle + i * angleStep;
-            const x = Math.cos(angle) * radius;
-            const y = centerY - Math.sin(angle) * (radius * 0.25);
-            this.createPeg({ x, y, z: 0 }, material);
-        }
-    }
-    
-    /**
-     * Create angled row with intermittent gaps (causes balls to drop through)
-     */
-    createAngledRowWithGaps(startX, startY, endX, endY, numPegs, gapEvery, material, side) {
-        for (let i = 0; i < numPegs; i++) {
-            // Skip every 'gapEvery' pegs to create gaps
-            if ((i + 1) % gapEvery === 0) continue;
-            
-            const t = i / (numPegs - 1);
-            const x = startX + (endX - startX) * t;
-            const y = startY + (endY - startY) * t;
-            this.createPeg({ x, y, z: 0 }, material);
-        }
-    }
-    
-    /**
-     * Create symmetrical V-shaped funnel to guide balls toward center
-     */
-    createSymmetricalFunnel(centerX, topY, width, height, pegsPerSide, material) {
-        // Left side of funnel
-        for (let i = 0; i < pegsPerSide; i++) {
-            const t = i / (pegsPerSide - 1);
-            const x = centerX - width / 2 + (width / 2) * t * 0.8;
-            const y = topY - height * t;
-            this.createPeg({ x, y, z: 0 }, material);
-        }
-        
-        // Right side of funnel (mirror)
-        for (let i = 0; i < pegsPerSide; i++) {
-            const t = i / (pegsPerSide - 1);
-            const x = centerX + width / 2 - (width / 2) * t * 0.8;
-            const y = topY - height * t;
-            this.createPeg({ x, y, z: 0 }, material);
-        }
-    }
-    
-    /**
-     * Create a curved row of pegs (arc shape)
-     */
-    createCurvedPegRow(centerY, radius, numPegs, material) {
+    createCurvedPegArch(centerY, radius, numPegs, material) {
         const startAngle = Math.PI * 0.15;
         const endAngle = Math.PI * 0.85;
         const angleStep = (endAngle - startAngle) / (numPegs - 1);
@@ -1034,52 +993,13 @@ export class Playfield {
         for (let i = 0; i < numPegs; i++) {
             const angle = startAngle + i * angleStep;
             const x = Math.cos(angle) * radius;
-            const y = centerY - Math.sin(angle) * (radius * 0.3);
-            this.createPeg({ x, y, z: 0 }, material);
-        }
-    }
-    
-    /**
-     * Create curved channel pegs on sides
-     */
-    createCurvedChannelPegs(startX, startY, endX, endY, count, material, side) {
-        for (let i = 0; i < count; i++) {
-            const t = i / (count - 1);
-            const x = startX + (endX - startX) * t;
-            const y = startY + (endY - startY) * t;
-            // Add slight curve
-            const curveOffset = Math.sin(t * Math.PI) * (side === 'left' ? 0.4 : -0.4);
-            this.createPeg({ x: x + curveOffset, y, z: 0 }, material);
-        }
-    }
-    
-    /**
-     * Create funnel-shaped peg arrangements
-     */
-    createFunnelPegs(startX, startY, material) {
-        const direction = startX > 0 ? -1 : 1;
-        // Create V-shape pointing toward center
-        for (let i = 0; i < 5; i++) {
-            const x = startX + direction * i * 0.35;
-            const y = startY - i * 0.35;
-            this.createPeg({ x, y, z: 0 }, material);
-        }
-    }
-    
-    /**
-     * Create drop path for balls to fall through
-     */
-    createDropPath(startX, startY, endX, endY, count, material) {
-        for (let i = 0; i < count; i++) {
-            const t = i / (count - 1);
-            const x = startX + (endX - startX) * t;
-            const y = startY + (endY - startY) * t;
+            const y = centerY + Math.sin(angle) * (radius * 0.2);
             this.createPeg({ x, y, z: 0 }, material);
         }
     }
 
     /**
-     * Create a single peg
+     * Create a single peg (silver pin)
      */
     createPeg(position, material) {
         const radius = CONFIG.PLAYFIELD.PEGS.RADIUS;

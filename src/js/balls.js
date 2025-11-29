@@ -76,8 +76,9 @@ export class BallManager {
         );
         
         // Enhanced Continuous Collision Detection (B.4)
-        body.ccdSpeedThreshold = 0.5; // Lower threshold = more CCD checks
-        body.ccdIterations = 15;      // More iterations = better accuracy
+        // Balanced settings for performance and accuracy
+        body.ccdSpeedThreshold = 1.0; // Trigger CCD when moving faster than 1 unit/s
+        body.ccdIterations = 10;      // Reasonable iterations for accuracy
         
         body.userData = { isBall: true };
         body.sleep();

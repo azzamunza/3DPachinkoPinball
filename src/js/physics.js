@@ -38,7 +38,7 @@ export class Physics {
         
         // Enhanced solver settings for better collision detection (B.4)
         this.world.solver.iterations = CONFIG.PHYSICS.SOLVER_ITERATIONS;
-        this.world.solver.tolerance = 0.0001; // Tighter tolerance
+        this.world.solver.tolerance = 0.0005; // Balanced tolerance for performance
         
         // Use NaiveBroadphase for more accurate but slower collision detection
         this.world.broadphase = new CANNON.SAPBroadphase(this.world);
