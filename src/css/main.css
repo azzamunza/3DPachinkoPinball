@@ -1251,13 +1251,13 @@ html, body {
 }
 
 .export-btn:disabled {
-    background: #555;
+    background: var(--secondary-bg);
     cursor: not-allowed;
     box-shadow: none;
 }
 
 .export-btn.exporting {
-    background: linear-gradient(145deg, var(--accent-yellow), #ca8a04);
+    background: linear-gradient(145deg, var(--accent-yellow), #b8860b);
     box-shadow: 0 4px 15px rgba(250, 204, 21, 0.4);
 }
 
