@@ -953,10 +953,313 @@ export class Playfield {
     }
 
     /**
-     * Create peg field - Dense silver Pachinko pins like reference image
-     * Reference: small silver pins densely packed across central area
+     * Create peg field - Authentic Pachinko layout (Requirement #10)
+     * Based on reference: https://vintagepachinko.wordpress.com/wp-content/uploads/2010/11/heiwa-vp0137-01.jpg
+     * Classic vintage Pachinko machines have specific pin patterns with:
+     * - Dense staggered rows in upper areas
+     * - Feature pockets and bumper areas with clear zones
+     * - Diagonal guide lines leading to pockets
+     * - Decreasing density toward the bottom
      */
     createPegs() {
+        const cfg = CONFIG.PLAYFIELD.PEGS;
+        const width = CONFIG.PLAYFIELD.WIDTH;
+        const height = CONFIG.PLAYFIELD.HEIGHT;
+        
+        // Silver pins (like reference image)
+        const silverMaterial = this.game.renderer.createMaterial({
+            ...CONFIG.MATERIALS.PEG,
+            color: 0xC0C0C0, // Silver
+            metalness: 0.9,
+            roughness: 0.15
+        });
+        
+        // Gold accent pins for rails/guides
+        const goldMaterial = this.game.renderer.createMaterial({
+            ...CONFIG.MATERIALS.PEG,
+            color: 0xD4A84B, // Gold
+            metalness: 0.85,
+            roughness: 0.2
+        });
+        
+        // Red accent pins (feature highlights)
+        const redMaterial = this.game.renderer.createMaterial({
+            ...CONFIG.MATERIALS.PEG,
+            color: 0xff3333,
+            metalness: 0.6,
+            roughness: 0.3,
+            emissive: 0x660000,
+            emissiveIntensity: 0.3
+        });
+        
+        // Skip zones for slot machine, bumpers, and pockets
+        const SKIP_ZONES = {
+            // Central slot machine area
+            SLOT_MACHINE: { 
+                xMin: -2.2, 
+                xMax: 2.2, 
+                yMin: -1.8, 
+                yMax: 1.8 
+            },
+            // Bumper positions
+            BUMPERS: [
+                { x: -3, y: 4, radius: 0.8 },
+                { x: 3, y: 4, radius: 0.8 },
+                { x: 0, y: 4.5, radius: 0.6 }
+            ],
+            // V-Pocket catchment areas
+            V_POCKETS: [
+                { x: -3, y: -2, radius: 0.7 },
+                { x: 0, y: -1.5, radius: 0.9 },
+                { x: 3, y: -2, radius: 0.7 }
+            ],
+            // Ramp entrances
+            RAMPS: [
+                { x: -4.5, y: -4, radius: 1.0 },
+                { x: 4.5, y: -4, radius: 1.0 }
+            ]
+        };
+        
+        // === AUTHENTIC PACHINKO LAYOUT (Requirement #10) ===
+        // Based on vintage Pachinko reference image
+        
+        // 1. Top entry distribution arc
+        this.createPegArc(0, height/2 - 1.5, 4, 12, silverMaterial);
+        this.createPegArc(0, height/2 - 2.2, 3.5, 10, goldMaterial);
+        
+        // 2. Upper play area - dense staggered pattern
+        this.createAuthenticPegZone(
+            -width/2 + 1, width/2 - 1,
+            height/2 - 3, 3,
+            0.55, 0.65,
+            silverMaterial, SKIP_ZONES
+        );
+        
+        // 3. Middle feature area - around bumpers with gaps
+        this.createAuthenticPegZone(
+            -width/2 + 1, width/2 - 1,
+            2.5, -0.5,
+            0.6, 0.7,
+            silverMaterial, SKIP_ZONES
+        );
+        
+        // 4. Central jackpot area - sparse pins around machine
+        this.createJackpotAreaPins(goldMaterial, SKIP_ZONES);
+        
+        // 5. Lower collection area - diagonal guides
+        this.createLowerGuidePins(goldMaterial, silverMaterial, SKIP_ZONES);
+        
+        // 6. Diamond pattern around bumpers (vintage style)
+        this.createDiamondPattern(-3, 4, 1.5, silverMaterial);
+        this.createDiamondPattern(3, 4, 1.5, silverMaterial);
+        
+        // 7. Highlight pins (red accents at key positions)
+        this.createHighlightPins(redMaterial);
+        
+        console.log(`Created ${this.pegs.length} pins in authentic Pachinko layout`);
+    }
+    
+    /**
+     * Create an arc of pegs (for top distribution)
+     */
+    createPegArc(centerX, centerY, radius, numPegs, material) {
+        const startAngle = Math.PI * 0.15;
+        const endAngle = Math.PI * 0.85;
+        const angleStep = (endAngle - startAngle) / (numPegs - 1);
+        
+        for (let i = 0; i < numPegs; i++) {
+            const angle = startAngle + i * angleStep;
+            const x = centerX + Math.cos(angle) * radius;
+            const y = centerY + Math.sin(angle) * (radius * 0.25);
+            this.createPeg({ x, y, z: 0 }, material);
+        }
+    }
+    
+    /**
+     * Create authentic Pachinko peg zone with staggered rows
+     */
+    createAuthenticPegZone(xMin, xMax, yMax, yMin, hSpacing, vSpacing, material, skipZones) {
+        let row = 0;
+        for (let y = yMax; y > yMin; y -= vSpacing) {
+            const isStaggered = row % 2 === 1;
+            const offset = isStaggered ? hSpacing / 2 : 0;
+            
+            const zoneWidth = xMax - xMin;
+            const numPegs = Math.floor(zoneWidth / hSpacing);
+            
+            for (let i = 0; i < numPegs; i++) {
+                const x = xMin + offset + i * hSpacing;
+                
+                if (this.shouldSkipPeg(x, y, skipZones)) continue;
+                
+                this.createPeg({ x, y, z: 0 }, material);
+            }
+            row++;
+        }
+    }
+    
+    /**
+     * Create pins around the jackpot machine area
+     */
+    createJackpotAreaPins(material, skipZones) {
+        // Pins forming a frame around the jackpot
+        const framePositions = [];
+        
+        // Top of jackpot
+        for (let x = -2.5; x <= 2.5; x += 0.6) {
+            framePositions.push({ x, y: 2.2 });
+        }
+        
+        // Bottom of jackpot
+        for (let x = -2.5; x <= 2.5; x += 0.6) {
+            framePositions.push({ x, y: -2.2 });
+        }
+        
+        // Left side
+        for (let y = -2; y <= 2; y += 0.6) {
+            framePositions.push({ x: -2.5, y });
+        }
+        
+        // Right side
+        for (let y = -2; y <= 2; y += 0.6) {
+            framePositions.push({ x: 2.5, y });
+        }
+        
+        framePositions.forEach(pos => {
+            if (!this.shouldSkipPeg(pos.x, pos.y, skipZones)) {
+                this.createPeg({ x: pos.x, y: pos.y, z: 0 }, material);
+            }
+        });
+    }
+    
+    /**
+     * Create lower guide pins leading to pockets
+     */
+    createLowerGuidePins(goldMaterial, silverMaterial, skipZones) {
+        // Left diagonal guide
+        for (let i = 0; i < 8; i++) {
+            const t = i / 7;
+            const x = -5 + t * 2;
+            const y = -1 - t * 4;
+            if (!this.shouldSkipPeg(x, y, skipZones)) {
+                this.createPeg({ x, y, z: 0 }, goldMaterial);
+            }
+        }
+        
+        // Right diagonal guide
+        for (let i = 0; i < 8; i++) {
+            const t = i / 7;
+            const x = 5 - t * 2;
+            const y = -1 - t * 4;
+            if (!this.shouldSkipPeg(x, y, skipZones)) {
+                this.createPeg({ x, y, z: 0 }, goldMaterial);
+            }
+        }
+        
+        // Center guides leading to jackpot pocket
+        for (let i = 0; i < 5; i++) {
+            const t = i / 4;
+            this.createPeg({ x: -1.5 - t * 0.5, y: -2.5 - t * 2, z: 0 }, goldMaterial);
+            this.createPeg({ x: 1.5 + t * 0.5, y: -2.5 - t * 2, z: 0 }, goldMaterial);
+        }
+        
+        // Additional silver pins in lower area
+        for (let y = -3; y > -5.5; y -= 0.7) {
+            for (let x = -4; x <= 4; x += 0.65) {
+                if (!this.shouldSkipPeg(x, y, skipZones)) {
+                    this.createPeg({ x, y, z: 0 }, silverMaterial);
+                }
+            }
+        }
+    }
+    
+    /**
+     * Create diamond pattern of pins around a point (vintage Pachinko style)
+     */
+    createDiamondPattern(centerX, centerY, size, material) {
+        const offsets = [
+            { x: 0, y: size },
+            { x: size, y: 0 },
+            { x: 0, y: -size },
+            { x: -size, y: 0 },
+            { x: size * 0.7, y: size * 0.7 },
+            { x: size * 0.7, y: -size * 0.7 },
+            { x: -size * 0.7, y: size * 0.7 },
+            { x: -size * 0.7, y: -size * 0.7 }
+        ];
+        
+        offsets.forEach(offset => {
+            this.createPeg({ 
+                x: centerX + offset.x, 
+                y: centerY + offset.y, 
+                z: 0 
+            }, material);
+        });
+    }
+    
+    /**
+     * Create highlight pins at key positions (red accents)
+     */
+    createHighlightPins(material) {
+        const positions = [
+            // Top entry points
+            { x: -4, y: 6 },
+            { x: 4, y: 6 },
+            // Feature zone markers
+            { x: -5.5, y: 3 },
+            { x: 5.5, y: 3 },
+            // Bottom pocket indicators
+            { x: -3, y: -5.5 },
+            { x: 0, y: -5 },
+            { x: 3, y: -5.5 }
+        ];
+        
+        positions.forEach(pos => {
+            this.createPeg({ x: pos.x, y: pos.y, z: 0 }, material);
+        });
+    }
+    
+    /**
+     * Check if a peg position should be skipped
+     */
+    shouldSkipPeg(x, y, skipZones) {
+        // Check slot machine area
+        if (x >= skipZones.SLOT_MACHINE.xMin && 
+            x <= skipZones.SLOT_MACHINE.xMax &&
+            y >= skipZones.SLOT_MACHINE.yMin && 
+            y <= skipZones.SLOT_MACHINE.yMax) {
+            return true;
+        }
+        
+        // Check bumper zones
+        for (const bz of skipZones.BUMPERS) {
+            const dist = Math.sqrt(Math.pow(x - bz.x, 2) + Math.pow(y - bz.y, 2));
+            if (dist < bz.radius) return true;
+        }
+        
+        // Check V-pocket zones
+        for (const vp of skipZones.V_POCKETS) {
+            const dist = Math.sqrt(Math.pow(x - vp.x, 2) + Math.pow(y - vp.y, 2));
+            if (dist < vp.radius) return true;
+        }
+        
+        // Check ramp zones
+        for (const ramp of skipZones.RAMPS) {
+            const dist = Math.sqrt(Math.pow(x - ramp.x, 2) + Math.pow(y - ramp.y, 2));
+            if (dist < ramp.radius) return true;
+        }
+        
+        // Check outer bounds
+        const width = CONFIG.PLAYFIELD.WIDTH;
+        if (Math.abs(x) > width / 2 - 0.8) return true;
+        
+        return false;
+    }
+
+    /**
+     * Create peg field legacy - not used anymore
+     */
+    createPegsLegacy() {
         const cfg = CONFIG.PLAYFIELD.PEGS;
         const width = CONFIG.PLAYFIELD.WIDTH;
         const height = CONFIG.PLAYFIELD.HEIGHT;
