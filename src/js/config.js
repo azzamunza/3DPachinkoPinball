@@ -90,6 +90,18 @@ export const CONFIG = {
             CENTER_FUNNEL_RIGHT: { startX: 3, startY: 1, endX: 1.5, endY: -1 }
         },
         
+        // Ramps configuration
+        RAMPS: {
+            LEFT: {
+                POSITION: { x: -5, y: 2, z: 0 },
+                FRICTION: 0.3
+            },
+            RIGHT: {
+                POSITION: { x: 5, y: 2, z: 0 },
+                FRICTION: 0.3
+            }
+        },
+        
         // Jackpot Funnel - Leads to slot machine
         FUNNEL: {
             TOP_RADIUS: 1.8,
