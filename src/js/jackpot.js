@@ -277,13 +277,13 @@ export class JackpotMachine {
         });
         
         // Neon frame
-        const frameGeometry = new THREE.EdgesGeometry(bodyGeometry);
-        const frameMaterial = new THREE.LineBasicMaterial({ 
+        const neonFrameGeometry = new THREE.EdgesGeometry(bodyGeometry);
+        const neonFrameMaterial = new THREE.LineBasicMaterial({ 
             color: 0x00ffff,
             linewidth: 2
         });
-        const frame = new THREE.LineSegments(frameGeometry, frameMaterial);
-        group.add(frame);
+        const neonFrame = new THREE.LineSegments(neonFrameGeometry, neonFrameMaterial);
+        group.add(neonFrame);
         
         // Handle/lever on the side
         const handleGroup = new THREE.Group();
