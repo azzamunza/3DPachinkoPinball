@@ -190,7 +190,7 @@ export const CONFIG = {
         },
         COOLDOWN: {
             DEFAULT: 0.8,
-            RAPID_FIRE: 0.3
+            RAPID_FIRE: 0.04 // 40ms for 25 balls per second (5x faster)
         },
         LAUNCH_VELOCITY_SCALE: 0.4,
         // Target dot for aiming (Requirement B.2)

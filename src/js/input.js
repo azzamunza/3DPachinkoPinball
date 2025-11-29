@@ -246,11 +246,7 @@ export class InputManager {
         // Process continuous keyboard input
         this.processKeyboardInput(deltaTime);
         
-        // Update cannon power if charging
-        if (this.isCharging) {
-            this.cannonPower = Math.min(100, this.cannonPower + (100 / CONFIG.CANNON.POWER.CHARGE_TIME) * deltaTime);
-            this.updateCannonUI();
-        }
+        // Note: Power is no longer adjusted by holding mouse - only rapid-fire
         
         // Process buffered inputs
         this.processInputBuffer();
@@ -437,16 +433,17 @@ export class InputManager {
     
     /**
      * Start rapid fire mode (Requirement #11)
-     * Fires 10 balls at 5 balls per second when middle mouse is held
+     * Fires balls at 25 balls per second when middle mouse is held (5x faster than before)
+     * No power adjustment - only rapid-fire
      */
     startRapidFire() {
         // Fire first ball immediately with default power from config
         this.cannonPower = (CONFIG.CANNON.POWER.DEFAULT || 2.0) * 25; // Scale default power to UI range
         this.bufferInput('fire');
         this.rapidFireCount = 1;
-        this.rapidFireMax = 10;
+        this.rapidFireMax = 50; // Increased max since we're firing faster
         
-        // Start rapid fire interval (5 balls per second = 200ms interval)
+        // Start rapid fire interval (25 balls per second = 40ms interval) - 5x faster
         this.rapidFireInterval = setInterval(() => {
             if (this.rapidFireCount >= this.rapidFireMax || !this.mouse.middleDown) {
                 this.stopRapidFire();
@@ -454,7 +451,7 @@ export class InputManager {
             }
             this.bufferInput('fire');
             this.rapidFireCount++;
-        }, 200); // 5 balls per second
+        }, 40); // 25 balls per second (5x faster than before)
     }
     
     /**
@@ -563,26 +560,46 @@ export class InputManager {
     }
 
     /**
-     * Start charging cannon
+     * Start charging cannon - now only starts rapid fire (no power adjustment)
      */
     startCharging() {
+        // No longer adjusts power - just starts rapid fire mode
         this.isCharging = true;
-        this.cannonPower = 0;
+        this.cannonPower = (CONFIG.CANNON.POWER.DEFAULT || 2.0) * 25; // Use default power
         
         const fireButton = document.getElementById('fire-button');
         fireButton.classList.add('charging');
+        
+        // Fire first ball immediately
+        this.bufferInput('fire');
+        this.rapidFireCount = 1;
+        this.rapidFireMax = 50;
+        
+        // Start rapid fire on hold (25 balls per second = 40ms interval) - 5x faster
+        this.rapidFireInterval = setInterval(() => {
+            if (this.rapidFireCount >= this.rapidFireMax || !this.isCharging) {
+                this.stopCharging();
+                return;
+            }
+            this.bufferInput('fire');
+            this.rapidFireCount++;
+        }, 40);
     }
 
     /**
-     * Stop charging and fire
+     * Stop charging and firing
      */
     stopCharging() {
         if (this.isCharging) {
             this.isCharging = false;
-            if (this.cannonPower > 5) {
-                this.bufferInput('fire');
-            }
             this.cannonPower = 0;
+            
+            // Stop rapid fire
+            if (this.rapidFireInterval) {
+                clearInterval(this.rapidFireInterval);
+                this.rapidFireInterval = null;
+            }
+            this.rapidFireCount = 0;
             
             const fireButton = document.getElementById('fire-button');
             fireButton.classList.remove('charging');
