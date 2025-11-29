@@ -46,6 +46,7 @@ export const CONFIG = {
         WIDTH: 14,  // Wider for Pachinko style
         HEIGHT: 16, // Slightly shorter ratio
         DEPTH: 1.5, // Contained depth for 3D space
+        BACK_SURFACE_Z: -0.4, // Z position of the back playing surface where pegs are mounted
         
         // Peg Configuration - Dense Pachinko Style (silver pins)
         PEGS: {
@@ -176,7 +177,8 @@ export const CONFIG = {
             MIN: 0,
             MAX: 100,
             CHARGE_TIME: 2.0,
-            MULTIPLIER: 1.0
+            MULTIPLIER: 2.0, // Default power set to 2.0 (Requirement #3)
+            DEFAULT: 2.0  // Default power value
         },
         ROTATION: {
             MIN: -60 * (Math.PI / 180), // Wider rotation range

@@ -16,6 +16,7 @@ export class InputManager {
             y: 0,
             leftDown: false,
             rightDown: false,
+            middleDown: false, // Added for middle mouse button (Requirement #11)
             wheelDelta: 0
         };
         this.touch = {
@@ -41,6 +42,11 @@ export class InputManager {
         // Jackpot handle state
         this.jackpotHandleDrag = false;
         this.jackpotHandleStartY = 0;
+        
+        // Rapid fire state (Requirement #11)
+        this.rapidFireInterval = null;
+        this.rapidFireCount = 0;
+        this.rapidFireMax = 10;
     }
 
     /**
@@ -271,10 +277,9 @@ export class InputManager {
             this.cannonElevation = Math.max(-1, this.cannonElevation - deltaTime * 2);
         }
         
-        // Update cannon with current values
+        // Update cannon with current mouse position for aiming (Requirement #2)
         if (this.game.cannon) {
-            this.game.cannon.setRotation(this.cannonRotation);
-            this.game.cannon.setElevation(this.cannonElevation);
+            this.game.cannon.setMousePosition(this.mouse.x, this.mouse.y);
         }
         
         this.updateCannonUI();
@@ -393,12 +398,18 @@ export class InputManager {
     /**
      * Handle mouse down
      * Requirement #6: Left mouse click triggers left pinball trigger
+     * Requirement #11: Middle mouse button fires mortar cannon; click+hold rapid fires
      */
     onMouseDown(e) {
         if (e.button === 0) {
             this.mouse.leftDown = true;
             // Left click always triggers left flipper (requirement #6)
             this.game.activateLeftFlipper();
+        } else if (e.button === 1) {
+            // Middle mouse button fires cannon (Requirement #11)
+            e.preventDefault();
+            this.mouse.middleDown = true;
+            this.startRapidFire();
         } else if (e.button === 2) {
             // Right click is now disabled via context menu prevention
             // But we can still use it for right flipper if desired
@@ -414,10 +425,47 @@ export class InputManager {
         if (e.button === 0) {
             this.mouse.leftDown = false;
             this.game.deactivateLeftFlipper();
+        } else if (e.button === 1) {
+            // Middle mouse button released - stop rapid fire
+            this.mouse.middleDown = false;
+            this.stopRapidFire();
         } else if (e.button === 2) {
             this.mouse.rightDown = false;
             this.game.deactivateRightFlipper();
         }
+    }
+    
+    /**
+     * Start rapid fire mode (Requirement #11)
+     * Fires 10 balls at 5 balls per second when middle mouse is held
+     */
+    startRapidFire() {
+        // Fire first ball immediately with default power from config
+        this.cannonPower = (CONFIG.CANNON.POWER.DEFAULT || 2.0) * 25; // Scale default power to UI range
+        this.bufferInput('fire');
+        this.rapidFireCount = 1;
+        this.rapidFireMax = 10;
+        
+        // Start rapid fire interval (5 balls per second = 200ms interval)
+        this.rapidFireInterval = setInterval(() => {
+            if (this.rapidFireCount >= this.rapidFireMax || !this.mouse.middleDown) {
+                this.stopRapidFire();
+                return;
+            }
+            this.bufferInput('fire');
+            this.rapidFireCount++;
+        }, 200); // 5 balls per second
+    }
+    
+    /**
+     * Stop rapid fire mode
+     */
+    stopRapidFire() {
+        if (this.rapidFireInterval) {
+            clearInterval(this.rapidFireInterval);
+            this.rapidFireInterval = null;
+        }
+        this.rapidFireCount = 0;
     }
 
     /**

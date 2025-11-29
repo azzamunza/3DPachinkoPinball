@@ -178,6 +178,7 @@ export class Cannon {
 
     /**
      * Set mouse position for aiming (Requirement B.3)
+     * Mouse position in normalized device coordinates (-1 to 1)
      */
     setMousePosition(x, y) {
         this.mouseX = x;
@@ -197,101 +198,96 @@ export class Cannon {
             );
         }
         
-        // Update barrel orientation based on input (Requirement B.3)
-        this.updateGimbalOrientation();
+        // Update target dot position directly from mouse (Requirement #2)
+        this.updateTargetDotFromMouse();
         
-        // Update target dot position (Requirement B.2)
-        this.updateTargetDot();
+        // Update barrel orientation to aim at target dot (Requirement #2)
+        this.updateBarrelToAimAtTarget();
         
         // Update power indicator color
         this.updatePowerIndicator();
     }
 
     /**
-     * Update gimbal orientation based on mouse position (Requirement B.3)
-     * The cannon rotates on a gimbal around its axis - left/right and up/down
+     * Update target dot position directly from mouse position (Requirement #2)
+     * The mouse position should directly drive the target dot location
      */
-    updateGimbalOrientation() {
-        // Rotation (left/right) based on mouse X or input
-        const targetRotationZ = this.rotation * CONFIG.CANNON.ROTATION.MAX;
-        this.barrelGroup.rotation.z = THREE.MathUtils.lerp(
-            this.barrelGroup.rotation.z,
-            -targetRotationZ, // Negative for natural left/right feel
-            0.15
-        );
+    updateTargetDotFromMouse() {
+        if (!this.targetDot) return;
         
-        // Elevation (pitch up/down) based on mouse Y or input
-        const targetRotationX = this.elevation * CONFIG.CANNON.ELEVATION.MAX;
-        this.barrelGroup.rotation.x = THREE.MathUtils.lerp(
-            this.barrelGroup.rotation.x,
-            -targetRotationX, // Tilt backward for upward aim
-            0.15
+        // Convert mouse NDC (-1 to 1) to world coordinates on the playfield
+        const playfieldWidth = CONFIG.PLAYFIELD.WIDTH;
+        const playfieldHeight = CONFIG.PLAYFIELD.HEIGHT;
+        
+        // Map mouse X/Y to playfield coordinates
+        // mouseX: -1 (left) to 1 (right) -> -width/2 to width/2
+        // mouseY: -1 (bottom) to 1 (top) -> -height/2 to height/2
+        const targetX = this.mouseX * (playfieldWidth / 2) * 0.9;
+        const targetY = this.mouseY * (playfieldHeight / 2) * 0.9;
+        
+        // Clamp to playfield bounds
+        const maxX = playfieldWidth / 2 - 0.5;
+        const maxY = playfieldHeight / 2 - 0.5;
+        const minY = -playfieldHeight / 2 + 2; // Keep above the cannon
+        
+        this.targetDot.position.set(
+            THREE.MathUtils.clamp(targetX, -maxX, maxX),
+            THREE.MathUtils.clamp(targetY, minY, maxY),
+            -0.3 // Slightly in front of playfield
         );
+        this.targetDot.visible = true;
     }
 
     /**
-     * Update target dot position using raycast (Requirement B.2, B.3)
-     * The target dot shows where the cannon is aiming on the playfield
+     * Update barrel orientation to aim at target dot (Requirement #2)
+     * The cannon should aim from its world space position to the target dot world space position
      */
-    updateTargetDot() {
-        if (!this.targetDot || !this.gimbalGroup) return;
+    updateBarrelToAimAtTarget() {
+        if (!this.targetDot || !this.gimbalGroup || !this.barrelGroup) return;
         
-        // Get cannon position
+        // Get cannon and target positions
         const cannonPos = this.gimbalGroup.position.clone();
+        const targetPos = this.targetDot.position.clone();
         
-        // Calculate aim direction based on barrel orientation
-        const direction = new THREE.Vector3(0, 1, 0); // Start pointing up
-        
-        // Apply barrel rotation
-        const rotMatrix = new THREE.Matrix4();
-        rotMatrix.makeRotationFromEuler(this.barrelGroup.rotation);
-        direction.applyMatrix4(rotMatrix);
-        
-        // Normalize
+        // Calculate direction from cannon to target
+        const direction = new THREE.Vector3().subVectors(targetPos, cannonPos);
         direction.normalize();
         
-        // Calculate target position on playfield (z = -0.5, the backboard)
-        // We want to find where the line from cannon intersects the playfield
-        const playfieldZ = -0.5;
+        // Calculate rotation angles to aim at target
+        // Rotation around Z axis (left/right aiming)
+        const targetRotationZ = Math.atan2(-direction.x, direction.y);
         
-        // If direction.z is negligible, aim at top of playfield
-        if (Math.abs(direction.z) < 0.01) {
-            const t = 15; // Fixed distance
-            this.targetDot.position.set(
-                cannonPos.x + direction.x * t,
-                cannonPos.y + direction.y * t,
-                0
-            );
-        } else {
-            // Calculate intersection with playfield plane
-            const t = (playfieldZ - cannonPos.z) / direction.z;
-            
-            // Only show target if it's in front of cannon
-            if (t > 0 && t < 20) {
-                const targetX = cannonPos.x + direction.x * t;
-                const targetY = cannonPos.y + direction.y * t;
-                
-                // Clamp to playfield bounds
-                const maxX = CONFIG.PLAYFIELD.WIDTH / 2 - 0.5;
-                const maxY = CONFIG.PLAYFIELD.HEIGHT / 2 - 0.5;
-                const minY = -CONFIG.PLAYFIELD.HEIGHT / 2 + 0.5;
-                
-                this.targetDot.position.set(
-                    THREE.MathUtils.clamp(targetX, -maxX, maxX),
-                    THREE.MathUtils.clamp(targetY, minY, maxY),
-                    -0.3 // Slightly in front of playfield
-                );
-                this.targetDot.visible = true;
-            } else {
-                // Target is behind or too far - aim at top center
-                this.targetDot.position.set(
-                    cannonPos.x + direction.x * 10,
-                    Math.min(cannonPos.y + direction.y * 10, CONFIG.PLAYFIELD.HEIGHT / 2 - 1),
-                    -0.3
-                );
-                this.targetDot.visible = true;
-            }
-        }
+        // Rotation around X axis (up/down elevation)
+        const horizontalDist = Math.sqrt(direction.x * direction.x + direction.y * direction.y);
+        const targetRotationX = Math.atan2(-direction.z, horizontalDist);
+        
+        // Clamp rotations to allowed range
+        const clampedRotationZ = THREE.MathUtils.clamp(
+            targetRotationZ,
+            -CONFIG.CANNON.ROTATION.MAX,
+            CONFIG.CANNON.ROTATION.MAX
+        );
+        const clampedRotationX = THREE.MathUtils.clamp(
+            targetRotationX,
+            -CONFIG.CANNON.ELEVATION.MAX,
+            CONFIG.CANNON.ELEVATION.MAX
+        );
+        
+        // Apply smooth rotation
+        this.barrelGroup.rotation.z = THREE.MathUtils.lerp(
+            this.barrelGroup.rotation.z,
+            clampedRotationZ,
+            0.15
+        );
+        this.barrelGroup.rotation.x = THREE.MathUtils.lerp(
+            this.barrelGroup.rotation.x,
+            clampedRotationX,
+            0.15
+        );
+        
+        // Store normalized rotation values for launch calculations
+        this.rotation = clampedRotationZ / CONFIG.CANNON.ROTATION.MAX;
+        this.elevation = clampedRotationX / CONFIG.CANNON.ELEVATION.MAX;
     }
 
     /**

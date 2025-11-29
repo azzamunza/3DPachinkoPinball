@@ -38,7 +38,11 @@ export class Playfield {
      * Create the entire playfield
      */
     create() {
+        // Create tilted playing surface (Requirement #5)
+        this.createTiltedPlaySurface();
         this.createBackboard();
+        this.createBallCatcher(); // Ball catcher at top (Requirement #5)
+        this.createSemiCircularTop(); // Semi-circular top (Requirement #6)
         this.createWalls();
         this.createPegs();
         this.createBumpers();
@@ -47,12 +51,190 @@ export class Playfield {
         this.createFunnel();
         this.createDrains();
         this.createFloor();
-        this.createVPockets();      // New: Authentic Pachinko V-Pockets
-        this.createTulipGates();    // New: Mechanical tulip gates
-        this.createFeatureZones();  // New: Special feature zones
-        this.createStartPocket();   // New: Ball entry guide
+        this.createVPockets();      // Authentic Pachinko V-Pockets
+        this.createTulipGates();    // Mechanical tulip gates
+        this.createFeatureZones();  // Special feature zones
+        this.createStartPocket();   // Ball entry guide
         
-        console.log('Playfield created with authentic Pachinko features');
+        console.log('Playfield created with tilted surface and ball catcher');
+    }
+    
+    /**
+     * Create tilted playing surface (Requirement #5)
+     * The playfield is tilted back at the top like a real pinball/pachinko machine
+     * Side profile shows the play area tilted with ball catcher section at top
+     */
+    createTiltedPlaySurface() {
+        const width = CONFIG.PLAYFIELD.WIDTH;
+        const height = CONFIG.PLAYFIELD.HEIGHT;
+        
+        // The playfield tilt angle (top tilted back)
+        const tiltAngle = CONFIG.PHYSICS.PLAYFIELD_TILT;
+        
+        // Create the tilted play surface visual (transparent to show backboard)
+        const surfaceGeometry = new THREE.PlaneGeometry(width, height);
+        const surfaceMaterial = new THREE.MeshStandardMaterial({
+            color: 0x222233,
+            transparent: true,
+            opacity: 0.1,
+            side: THREE.DoubleSide
+        });
+        
+        const surface = new THREE.Mesh(surfaceGeometry, surfaceMaterial);
+        // Position at z=0 and rotate around X-axis to tilt top backward
+        surface.position.set(0, 0, 0);
+        surface.rotation.x = tiltAngle;
+        
+        // Don't add to scene - physics handles the tilt
+        // this.game.renderer.add(surface);
+        this.playSurface = surface;
+    }
+    
+    /**
+     * Create ball catcher section at top (Requirement #5)
+     * This is the elevated section where the mortar cannon shoots balls into
+     */
+    createBallCatcher() {
+        const width = CONFIG.PLAYFIELD.WIDTH;
+        const catcherHeight = 2.5;
+        const catcherY = CONFIG.PLAYFIELD.HEIGHT / 2 + catcherHeight / 2;
+        
+        // Catcher back wall (curved shelf above main playfield)
+        const catcherMaterial = new THREE.MeshStandardMaterial({
+            color: 0x333344,
+            metalness: 0.5,
+            roughness: 0.5,
+            emissive: 0x111122,
+            emissiveIntensity: 0.2
+        });
+        
+        // Catcher floor (horizontal shelf)
+        const catcherFloorGeo = new THREE.BoxGeometry(width - 1, catcherHeight * 0.3, 0.3);
+        const catcherFloor = new THREE.Mesh(catcherFloorGeo, catcherMaterial);
+        catcherFloor.position.set(0, catcherY - catcherHeight/2, 0.3);
+        this.game.renderer.add(catcherFloor);
+        this.meshes.push(catcherFloor);
+        
+        // Add physics for catcher floor
+        const catcherFloorBody = this.game.physics.createBox(
+            { x: (width - 1) / 2, y: catcherHeight * 0.15, z: 0.15 },
+            0,
+            { x: 0, y: catcherY - catcherHeight/2, z: 0.3 },
+            null,
+            this.game.physics.materials.wall
+        );
+        this.game.physics.addBody(catcherFloorBody);
+        
+        // Catcher back wall
+        const catcherBackGeo = new THREE.BoxGeometry(width - 1, catcherHeight, 0.2);
+        const catcherBack = new THREE.Mesh(catcherBackGeo, catcherMaterial);
+        catcherBack.position.set(0, catcherY, -0.5);
+        this.game.renderer.add(catcherBack);
+        this.meshes.push(catcherBack);
+        
+        // Side guide rails for catcher
+        const railMaterial = new THREE.MeshStandardMaterial({
+            color: 0xc0c0c0,
+            metalness: 0.9,
+            roughness: 0.2
+        });
+        
+        const leftRailGeo = new THREE.BoxGeometry(0.2, catcherHeight, 0.5);
+        const leftRail = new THREE.Mesh(leftRailGeo, railMaterial);
+        leftRail.position.set(-width/2 + 0.6, catcherY, 0.2);
+        this.game.renderer.add(leftRail);
+        this.meshes.push(leftRail);
+        
+        const rightRail = new THREE.Mesh(leftRailGeo.clone(), railMaterial);
+        rightRail.position.set(width/2 - 0.6, catcherY, 0.2);
+        this.game.renderer.add(rightRail);
+        this.meshes.push(rightRail);
+        
+        // Sloped transition from catcher to main playfield
+        const slopeMaterial = new THREE.MeshStandardMaterial({
+            color: 0x444455,
+            metalness: 0.4,
+            roughness: 0.6
+        });
+        
+        const slopeGeo = new THREE.BoxGeometry(width - 1, 0.8, 0.2);
+        const slope = new THREE.Mesh(slopeGeo, slopeMaterial);
+        slope.position.set(0, CONFIG.PLAYFIELD.HEIGHT / 2 - 0.3, 0.1);
+        slope.rotation.x = -Math.PI / 8; // Angled to guide balls down
+        this.game.renderer.add(slope);
+        this.meshes.push(slope);
+        
+        // Physics for slope
+        const slopeBody = this.game.physics.createBox(
+            { x: (width - 1) / 2, y: 0.4, z: 0.1 },
+            0,
+            { x: 0, y: CONFIG.PLAYFIELD.HEIGHT / 2 - 0.3, z: 0.1 },
+            { x: -Math.PI / 8, y: 0, z: 0 },
+            this.game.physics.materials.ramp
+        );
+        this.game.physics.addBody(slopeBody);
+        
+        console.log('Ball catcher section created');
+    }
+    
+    /**
+     * Create semi-circular top (Requirement #6)
+     * Front view shows a semi-circular top for the Pachinko machine
+     */
+    createSemiCircularTop() {
+        const width = CONFIG.PLAYFIELD.WIDTH;
+        const radius = width / 2;
+        const centerY = CONFIG.PLAYFIELD.HEIGHT / 2;
+        
+        // Create semi-circular top frame using arc
+        const arcPoints = [];
+        const numPoints = 32;
+        
+        for (let i = 0; i <= numPoints; i++) {
+            const angle = Math.PI * (i / numPoints);
+            const x = Math.cos(angle) * radius;
+            const y = centerY + Math.sin(angle) * (radius * 0.4);
+            arcPoints.push(new THREE.Vector3(x, y, 0));
+        }
+        
+        // Create semi-circular frame using tube
+        const curve = new THREE.CatmullRomCurve3(arcPoints);
+        const tubeGeometry = new THREE.TubeGeometry(curve, 32, 0.3, 8, false);
+        const frameMaterial = new THREE.MeshStandardMaterial({
+            color: 0xc0c0c0,
+            metalness: 0.9,
+            roughness: 0.2,
+            emissive: 0x333333,
+            emissiveIntensity: 0.1
+        });
+        
+        const arcFrame = new THREE.Mesh(tubeGeometry, frameMaterial);
+        arcFrame.position.z = 0.4;
+        this.game.renderer.add(arcFrame);
+        this.meshes.push(arcFrame);
+        
+        // Add decorative lights along the arc
+        const lightColors = [0xff0066, 0x00ff66, 0x6600ff, 0xffff00, 0x00ffff];
+        for (let i = 0; i <= numPoints; i += 4) {
+            const angle = Math.PI * (i / numPoints);
+            const x = Math.cos(angle) * (radius + 0.1);
+            const y = centerY + Math.sin(angle) * (radius * 0.4 + 0.1);
+            
+            const lightGeo = new THREE.SphereGeometry(0.1, 8, 8);
+            const color = lightColors[Math.floor(i / 4) % lightColors.length];
+            const lightMat = new THREE.MeshBasicMaterial({ color });
+            const light = new THREE.Mesh(lightGeo, lightMat);
+            light.position.set(x, y, 0.5);
+            this.game.renderer.add(light);
+            this.meshes.push(light);
+            
+            // Point light for glow
+            const pointLight = new THREE.PointLight(color, 0.3, 2);
+            pointLight.position.set(x, y, 0.6);
+            this.game.renderer.add(pointLight);
+        }
+        
+        console.log('Semi-circular top created');
     }
 
     /**
@@ -771,8 +953,13 @@ export class Playfield {
     }
 
     /**
-     * Create peg field - Dense silver Pachinko pins like reference image
-     * Reference: small silver pins densely packed across central area
+     * Create peg field - Authentic Pachinko layout (Requirement #10)
+     * Based on reference: https://vintagepachinko.wordpress.com/wp-content/uploads/2010/11/heiwa-vp0137-01.jpg
+     * Classic vintage Pachinko machines have specific pin patterns with:
+     * - Dense staggered rows in upper areas
+     * - Feature pockets and bumper areas with clear zones
+     * - Diagonal guide lines leading to pockets
+     * - Decreasing density toward the bottom
      */
     createPegs() {
         const cfg = CONFIG.PLAYFIELD.PEGS;
@@ -795,6 +982,16 @@ export class Playfield {
             roughness: 0.2
         });
         
+        // Red accent pins (feature highlights)
+        const redMaterial = this.game.renderer.createMaterial({
+            ...CONFIG.MATERIALS.PEG,
+            color: 0xff3333,
+            metalness: 0.6,
+            roughness: 0.3,
+            emissive: 0x660000,
+            emissiveIntensity: 0.3
+        });
+        
         // Skip zones for slot machine, bumpers, and pockets
         const SKIP_ZONES = {
             // Central slot machine area
@@ -806,115 +1003,259 @@ export class Playfield {
             },
             // Bumper positions
             BUMPERS: [
-                { x: -3, y: 4, radius: 0.7 },
-                { x: 3, y: 4, radius: 0.7 }
+                { x: -3, y: 4, radius: 0.8 },
+                { x: 3, y: 4, radius: 0.8 },
+                { x: 0, y: 4.5, radius: 0.6 }
             ],
             // V-Pocket catchment areas
             V_POCKETS: [
-                { x: -3, y: -2, radius: 0.6 },
-                { x: 0, y: -1.5, radius: 0.8 },
-                { x: 3, y: -2, radius: 0.6 }
+                { x: -3, y: -2, radius: 0.7 },
+                { x: 0, y: -1.5, radius: 0.9 },
+                { x: 3, y: -2, radius: 0.7 }
+            ],
+            // Ramp entrances
+            RAMPS: [
+                { x: -4.5, y: -4, radius: 1.0 },
+                { x: 4.5, y: -4, radius: 1.0 }
             ]
         };
         
-        // === DENSE PIN GRID (Main playfield) ===
-        const vSpacing = cfg.VERTICAL_SPACING;
-        const hSpacing = cfg.HORIZONTAL_SPACING;
-        const startY = height / 2 - 2;  // Start from top (below header)
-        const endY = -height / 2 + 3;   // End above catchers
+        // === AUTHENTIC PACHINKO LAYOUT (Requirement #10) ===
+        // Based on vintage Pachinko reference image
         
+        // 1. Top entry distribution arc
+        this.createPegArc(0, height/2 - 1.5, 4, 12, silverMaterial);
+        this.createPegArc(0, height/2 - 2.2, 3.5, 10, goldMaterial);
+        
+        // 2. Upper play area - dense staggered pattern
+        this.createAuthenticPegZone(
+            -width/2 + 1, width/2 - 1,
+            height/2 - 3, 3,
+            0.55, 0.65,
+            silverMaterial, SKIP_ZONES
+        );
+        
+        // 3. Middle feature area - around bumpers with gaps
+        this.createAuthenticPegZone(
+            -width/2 + 1, width/2 - 1,
+            2.5, -0.5,
+            0.6, 0.7,
+            silverMaterial, SKIP_ZONES
+        );
+        
+        // 4. Central jackpot area - sparse pins around machine
+        this.createJackpotAreaPins(goldMaterial, SKIP_ZONES);
+        
+        // 5. Lower collection area - diagonal guides
+        this.createLowerGuidePins(goldMaterial, silverMaterial, SKIP_ZONES);
+        
+        // 6. Diamond pattern around bumpers (vintage style)
+        this.createDiamondPattern(-3, 4, 1.5, silverMaterial);
+        this.createDiamondPattern(3, 4, 1.5, silverMaterial);
+        
+        // 7. Highlight pins (red accents at key positions)
+        this.createHighlightPins(redMaterial);
+        
+        console.log(`Created ${this.pegs.length} pins in authentic Pachinko layout`);
+    }
+    
+    /**
+     * Create an arc of pegs (for top distribution)
+     */
+    createPegArc(centerX, centerY, radius, numPegs, material) {
+        const startAngle = Math.PI * 0.15;
+        const endAngle = Math.PI * 0.85;
+        const angleStep = (endAngle - startAngle) / (numPegs - 1);
+        
+        for (let i = 0; i < numPegs; i++) {
+            const angle = startAngle + i * angleStep;
+            const x = centerX + Math.cos(angle) * radius;
+            const y = centerY + Math.sin(angle) * (radius * 0.25);
+            this.createPeg({ x, y, z: 0 }, material);
+        }
+    }
+    
+    /**
+     * Create authentic Pachinko peg zone with staggered rows
+     */
+    createAuthenticPegZone(xMin, xMax, yMax, yMin, hSpacing, vSpacing, material, skipZones) {
         let row = 0;
-        for (let y = startY; y > endY; y -= vSpacing) {
+        for (let y = yMax; y > yMin; y -= vSpacing) {
             const isStaggered = row % 2 === 1;
             const offset = isStaggered ? hSpacing / 2 : 0;
             
-            // Narrower at top and bottom, wider in middle
-            const rowProgress = Math.abs(y) / (height / 2);
-            const rowWidth = (width - 2) * (1 - rowProgress * 0.3);
-            const numPegs = Math.floor(rowWidth / hSpacing);
-            const startX = -(numPegs - 1) * hSpacing / 2 + offset;
+            const zoneWidth = xMax - xMin;
+            const numPegs = Math.floor(zoneWidth / hSpacing);
             
             for (let i = 0; i < numPegs; i++) {
-                const x = startX + i * hSpacing;
+                const x = xMin + offset + i * hSpacing;
                 
-                // Check if should skip this position
-                let skip = false;
+                if (this.shouldSkipPeg(x, y, skipZones)) continue;
                 
-                // Skip slot machine area
-                if (x >= SKIP_ZONES.SLOT_MACHINE.xMin && 
-                    x <= SKIP_ZONES.SLOT_MACHINE.xMax &&
-                    y >= SKIP_ZONES.SLOT_MACHINE.yMin && 
-                    y <= SKIP_ZONES.SLOT_MACHINE.yMax) {
-                    skip = true;
-                }
-                
-                // Skip bumper zones
-                for (const bz of SKIP_ZONES.BUMPERS) {
-                    const dist = Math.sqrt(Math.pow(x - bz.x, 2) + Math.pow(y - bz.y, 2));
-                    if (dist < bz.radius) skip = true;
-                }
-                
-                // Skip V-pocket zones
-                for (const vp of SKIP_ZONES.V_POCKETS) {
-                    const dist = Math.sqrt(Math.pow(x - vp.x, 2) + Math.pow(y - vp.y, 2));
-                    if (dist < vp.radius) skip = true;
-                }
-                
-                // Skip outer edges
-                if (Math.abs(x) > width / 2 - 1) skip = true;
-                
-                if (!skip) {
-                    this.createPeg({ x, y, z: 0 }, silverMaterial);
-                }
+                this.createPeg({ x, y, z: 0 }, material);
             }
             row++;
         }
-        
-        // === TOP CURVED ARCHES (Entry distribution) ===
-        this.createCurvedPegArch(height / 2 - 1.5, width / 2 - 1, 16, goldMaterial);
-        this.createCurvedPegArch(height / 2 - 2.2, width / 2 - 1.5, 14, silverMaterial);
-        
-        // === FUNNEL GUIDES toward slot machine ===
-        // Left funnel
-        for (let i = 0; i < 6; i++) {
-            const t = i / 5;
-            const x = -4 + t * 1.5;
-            const y = 3 - t * 3;
-            this.createPeg({ x, y, z: 0 }, goldMaterial);
-        }
-        // Right funnel
-        for (let i = 0; i < 6; i++) {
-            const t = i / 5;
-            const x = 4 - t * 1.5;
-            const y = 3 - t * 3;
-            this.createPeg({ x, y, z: 0 }, goldMaterial);
-        }
-        
-        // === LOWER GUIDES toward catchers ===
-        // Left guide
-        for (let i = 0; i < 5; i++) {
-            const t = i / 4;
-            const x = -4 + t * 0.5;
-            const y = -3 - t * 2;
-            this.createPeg({ x, y, z: 0 }, goldMaterial);
-        }
-        // Right guide
-        for (let i = 0; i < 5; i++) {
-            const t = i / 4;
-            const x = 4 - t * 0.5;
-            const y = -3 - t * 2;
-            this.createPeg({ x, y, z: 0 }, goldMaterial);
-        }
-        // Center guides
-        for (let i = 0; i < 4; i++) {
-            const t = i / 3;
-            this.createPeg({ x: -1.5 - t * 0.3, y: -2 - t * 2.5, z: 0 }, goldMaterial);
-            this.createPeg({ x: 1.5 + t * 0.3, y: -2 - t * 2.5, z: 0 }, goldMaterial);
-        }
-        
-        console.log(`Created ${this.pegs.length} silver pins (dense Pachinko layout)`);
     }
     
+    /**
+     * Create pins around the jackpot machine area
+     */
+    createJackpotAreaPins(material, skipZones) {
+        // Pins forming a frame around the jackpot
+        const framePositions = [];
+        
+        // Top of jackpot
+        for (let x = -2.5; x <= 2.5; x += 0.6) {
+            framePositions.push({ x, y: 2.2 });
+        }
+        
+        // Bottom of jackpot
+        for (let x = -2.5; x <= 2.5; x += 0.6) {
+            framePositions.push({ x, y: -2.2 });
+        }
+        
+        // Left side
+        for (let y = -2; y <= 2; y += 0.6) {
+            framePositions.push({ x: -2.5, y });
+        }
+        
+        // Right side
+        for (let y = -2; y <= 2; y += 0.6) {
+            framePositions.push({ x: 2.5, y });
+        }
+        
+        framePositions.forEach(pos => {
+            if (!this.shouldSkipPeg(pos.x, pos.y, skipZones)) {
+                this.createPeg({ x: pos.x, y: pos.y, z: 0 }, material);
+            }
+        });
+    }
+    
+    /**
+     * Create lower guide pins leading to pockets
+     */
+    createLowerGuidePins(goldMaterial, silverMaterial, skipZones) {
+        // Left diagonal guide
+        for (let i = 0; i < 8; i++) {
+            const t = i / 7;
+            const x = -5 + t * 2;
+            const y = -1 - t * 4;
+            if (!this.shouldSkipPeg(x, y, skipZones)) {
+                this.createPeg({ x, y, z: 0 }, goldMaterial);
+            }
+        }
+        
+        // Right diagonal guide
+        for (let i = 0; i < 8; i++) {
+            const t = i / 7;
+            const x = 5 - t * 2;
+            const y = -1 - t * 4;
+            if (!this.shouldSkipPeg(x, y, skipZones)) {
+                this.createPeg({ x, y, z: 0 }, goldMaterial);
+            }
+        }
+        
+        // Center guides leading to jackpot pocket
+        for (let i = 0; i < 5; i++) {
+            const t = i / 4;
+            this.createPeg({ x: -1.5 - t * 0.5, y: -2.5 - t * 2, z: 0 }, goldMaterial);
+            this.createPeg({ x: 1.5 + t * 0.5, y: -2.5 - t * 2, z: 0 }, goldMaterial);
+        }
+        
+        // Additional silver pins in lower area
+        for (let y = -3; y > -5.5; y -= 0.7) {
+            for (let x = -4; x <= 4; x += 0.65) {
+                if (!this.shouldSkipPeg(x, y, skipZones)) {
+                    this.createPeg({ x, y, z: 0 }, silverMaterial);
+                }
+            }
+        }
+    }
+    
+    /**
+     * Create diamond pattern of pins around a point (vintage Pachinko style)
+     */
+    createDiamondPattern(centerX, centerY, size, material) {
+        const offsets = [
+            { x: 0, y: size },
+            { x: size, y: 0 },
+            { x: 0, y: -size },
+            { x: -size, y: 0 },
+            { x: size * 0.7, y: size * 0.7 },
+            { x: size * 0.7, y: -size * 0.7 },
+            { x: -size * 0.7, y: size * 0.7 },
+            { x: -size * 0.7, y: -size * 0.7 }
+        ];
+        
+        offsets.forEach(offset => {
+            this.createPeg({ 
+                x: centerX + offset.x, 
+                y: centerY + offset.y, 
+                z: 0 
+            }, material);
+        });
+    }
+    
+    /**
+     * Create highlight pins at key positions (red accents)
+     */
+    createHighlightPins(material) {
+        const positions = [
+            // Top entry points
+            { x: -4, y: 6 },
+            { x: 4, y: 6 },
+            // Feature zone markers
+            { x: -5.5, y: 3 },
+            { x: 5.5, y: 3 },
+            // Bottom pocket indicators
+            { x: -3, y: -5.5 },
+            { x: 0, y: -5 },
+            { x: 3, y: -5.5 }
+        ];
+        
+        positions.forEach(pos => {
+            this.createPeg({ x: pos.x, y: pos.y, z: 0 }, material);
+        });
+    }
+    
+    /**
+     * Check if a peg position should be skipped
+     */
+    shouldSkipPeg(x, y, skipZones) {
+        // Check slot machine area
+        if (x >= skipZones.SLOT_MACHINE.xMin && 
+            x <= skipZones.SLOT_MACHINE.xMax &&
+            y >= skipZones.SLOT_MACHINE.yMin && 
+            y <= skipZones.SLOT_MACHINE.yMax) {
+            return true;
+        }
+        
+        // Check bumper zones
+        for (const bz of skipZones.BUMPERS) {
+            const dist = Math.sqrt(Math.pow(x - bz.x, 2) + Math.pow(y - bz.y, 2));
+            if (dist < bz.radius) return true;
+        }
+        
+        // Check V-pocket zones
+        for (const vp of skipZones.V_POCKETS) {
+            const dist = Math.sqrt(Math.pow(x - vp.x, 2) + Math.pow(y - vp.y, 2));
+            if (dist < vp.radius) return true;
+        }
+        
+        // Check ramp zones
+        for (const ramp of skipZones.RAMPS) {
+            const dist = Math.sqrt(Math.pow(x - ramp.x, 2) + Math.pow(y - ramp.y, 2));
+            if (dist < ramp.radius) return true;
+        }
+        
+        // Check outer bounds
+        const width = CONFIG.PLAYFIELD.WIDTH;
+        if (Math.abs(x) > width / 2 - 0.8) return true;
+        
+        return false;
+    }
+
     /**
      * Create curved arch of pegs at top
      */
@@ -932,17 +1273,21 @@ export class Playfield {
     }
 
     /**
-     * Create a single peg (silver pin)
+     * Create a single peg (silver pin) - positioned at the back playing surface (Requirement #4)
      */
     createPeg(position, material) {
         const radius = CONFIG.PLAYFIELD.PEGS.RADIUS;
         const height = CONFIG.PLAYFIELD.PEGS.HEIGHT;
         
+        // Position peg at back surface using config constant (Requirement #4)
+        const backSurfaceZ = CONFIG.PLAYFIELD.BACK_SURFACE_Z;
+        const pegZ = backSurfaceZ + height / 2; // Pegs sit on the back surface
+        
         // Visual mesh (cylinder)
         const geometry = new THREE.CylinderGeometry(radius, radius, height, 8);
         const mesh = new THREE.Mesh(geometry, material);
-        mesh.position.set(position.x, position.y, position.z);
-        mesh.rotation.x = Math.PI / 2; // Rotate to face forward
+        mesh.position.set(position.x, position.y, pegZ);
+        mesh.rotation.x = Math.PI / 2; // Rotate to face forward (stick out from backboard)
         mesh.castShadow = true;
         
         // Add emissive property for LED glow effect
@@ -953,19 +1298,20 @@ export class Playfield {
         this.game.renderer.add(mesh);
         this.meshes.push(mesh);
         
-        // Physics body (use sphere for simpler collision)
+        // Physics body - positioned at back surface (Requirement #4)
+        const bodyPosition = { x: position.x, y: position.y, z: pegZ };
         const body = this.game.physics.createCylinder(
-            radius, radius, height, 8, 0, position,
+            radius, radius, height, 8, 0, bodyPosition,
             this.game.physics.materials.peg
         );
         
         // Add collision callback
         body.addEventListener('collide', (e) => {
-            this.onPegHit(e, mesh, position);
+            this.onPegHit(e, mesh, bodyPosition);
         });
         
         this.game.physics.addBody(body);
-        this.pegs.push({ mesh, body, position });
+        this.pegs.push({ mesh, body, position: bodyPosition });
     }
 
     /**
@@ -1233,64 +1579,229 @@ export class Playfield {
     }
 
     /**
-     * Create ramps
+     * Create ramps - Requirement #9: Add ramps inline with flippers for balls to return to top
      */
     createRamps() {
-        // Left ramp
-        this.createRamp(
-            CONFIG.PLAYFIELD.RAMPS.LEFT.POSITION,
-            Math.PI / 8,
-            'left'
-        );
+        // Left return ramp - aligned with left flipper direction
+        this.createReturnRamp('left');
         
-        // Right ramp
-        this.createRamp(
-            CONFIG.PLAYFIELD.RAMPS.RIGHT.POSITION,
-            -Math.PI / 8,
-            'right'
-        );
+        // Right return ramp - aligned with right flipper direction
+        this.createReturnRamp('right');
         
-        console.log(`Created ${this.ramps.length} ramps`);
+        console.log(`Created ${this.ramps.length} return ramps`);
     }
 
     /**
-     * Create a single ramp
+     * Create a return ramp that takes balls back to the top (Requirement #9)
      */
-    createRamp(position, angle, side) {
-        const material = this.game.renderer.createMaterial(CONFIG.MATERIALS.RAMP);
+    createReturnRamp(side) {
+        const isLeft = side === 'left';
         
-        // Ramp geometry (curved surface)
-        const length = 3;
-        const width = 0.8;
+        // Ramp position aligned with flipper hitting direction
+        const flipperX = isLeft ? CONFIG.FLIPPERS.LEFT.POSITION.x : CONFIG.FLIPPERS.RIGHT.POSITION.x;
+        const flipperY = CONFIG.FLIPPERS.LEFT.POSITION.y;
         
-        const geometry = new THREE.BoxGeometry(width, length, 0.2);
-        const mesh = new THREE.Mesh(geometry, material);
-        mesh.position.set(position.x, position.y, position.z);
-        mesh.rotation.z = angle;
-        mesh.rotation.x = -0.2; // Slight tilt
-        mesh.castShadow = true;
-        mesh.receiveShadow = true;
+        // Ramp entrance positioned where flippers would hit balls
+        const entranceX = isLeft ? flipperX + 2 : flipperX - 2;
+        const entranceY = flipperY + 1;
         
-        this.game.renderer.add(mesh);
-        this.meshes.push(mesh);
+        // Create curved ramp using multiple segments
+        const rampWidth = 0.8;
+        const rampHeight = 0.15;
+        const numSegments = 8;
         
-        // Physics body
-        const body = this.game.physics.createBox(
-            { x: width/2, y: length/2, z: 0.1 },
-            0,
-            position,
-            { x: -0.2, y: 0, z: angle },
-            this.game.physics.materials.ramp
-        );
+        // Calculate ramp path - curves up and inward toward top center
+        const rampPoints = [];
+        for (let i = 0; i <= numSegments; i++) {
+            const t = i / numSegments;
+            
+            // Curve from flipper area to top of playfield
+            const x = entranceX + (isLeft ? 1 : -1) * t * (CONFIG.PLAYFIELD.WIDTH / 4);
+            const y = entranceY + t * (CONFIG.PLAYFIELD.HEIGHT * 0.7);
+            const z = 0.1 + t * 0.3; // Rises above the playfield slightly
+            
+            rampPoints.push({ x, y, z });
+        }
         
-        body.userData = { isRamp: true, side };
-        
-        body.addEventListener('collide', (e) => {
-            this.onRampEnter(e, side);
+        // Ramp material - metallic with LED glow
+        const rampMaterial = new THREE.MeshStandardMaterial({
+            color: 0x4444aa,
+            metalness: 0.7,
+            roughness: 0.3,
+            emissive: 0x1111ff,
+            emissiveIntensity: 0.3
         });
         
-        this.game.physics.addBody(body);
-        this.ramps.push({ mesh, body, position, side });
+        // Create ramp segments
+        for (let i = 0; i < numSegments; i++) {
+            const p1 = rampPoints[i];
+            const p2 = rampPoints[i + 1];
+            
+            const dx = p2.x - p1.x;
+            const dy = p2.y - p1.y;
+            const dz = p2.z - p1.z;
+            const segLength = Math.sqrt(dx*dx + dy*dy + dz*dz);
+            
+            const midX = (p1.x + p2.x) / 2;
+            const midY = (p1.y + p2.y) / 2;
+            const midZ = (p1.z + p2.z) / 2;
+            
+            // Create segment mesh
+            const segGeometry = new THREE.BoxGeometry(rampWidth, segLength, rampHeight);
+            const segMesh = new THREE.Mesh(segGeometry, rampMaterial.clone());
+            segMesh.position.set(midX, midY, midZ);
+            
+            // Calculate rotation to align with path
+            const rotZ = Math.atan2(dx, dy);
+            const rotX = Math.atan2(dz, Math.sqrt(dx*dx + dy*dy));
+            segMesh.rotation.z = -rotZ;
+            segMesh.rotation.x = rotX;
+            
+            this.game.renderer.add(segMesh);
+            this.meshes.push(segMesh);
+            
+            // Add rails on sides of ramp
+            this.addRampRails(midX, midY, midZ, rotZ, rampWidth, segLength);
+            
+            // Physics body for the segment
+            const halfExtents = { x: rampWidth/2, y: segLength/2, z: rampHeight/2 };
+            const body = this.game.physics.createBox(
+                halfExtents,
+                0,
+                { x: midX, y: midY, z: midZ },
+                { x: rotX, y: 0, z: -rotZ },
+                this.game.physics.materials.ramp
+            );
+            
+            body.userData = { isRamp: true, side, segment: i };
+            this.game.physics.addBody(body);
+        }
+        
+        // Add ramp entrance guide
+        this.createRampEntrance(entranceX, entranceY, isLeft);
+        
+        // Add ramp exit at top
+        this.createRampExit(rampPoints[numSegments], isLeft);
+        
+        this.ramps.push({ side, points: rampPoints });
+    }
+    
+    /**
+     * Add rails to the sides of the ramp
+     */
+    addRampRails(x, y, z, rotZ, rampWidth, segLength) {
+        const railMaterial = new THREE.MeshStandardMaterial({
+            color: 0x00ffff,
+            metalness: 0.9,
+            roughness: 0.2,
+            emissive: 0x00aaaa,
+            emissiveIntensity: 0.5
+        });
+        
+        const railGeometry = new THREE.BoxGeometry(0.08, segLength, 0.25);
+        
+        // Left rail
+        const leftRail = new THREE.Mesh(railGeometry, railMaterial);
+        leftRail.position.set(x - rampWidth/2 * Math.cos(rotZ), y - rampWidth/2 * Math.sin(rotZ), z + 0.1);
+        leftRail.rotation.z = -rotZ;
+        this.game.renderer.add(leftRail);
+        this.meshes.push(leftRail);
+        
+        // Right rail
+        const rightRail = new THREE.Mesh(railGeometry, railMaterial.clone());
+        rightRail.position.set(x + rampWidth/2 * Math.cos(rotZ), y + rampWidth/2 * Math.sin(rotZ), z + 0.1);
+        rightRail.rotation.z = -rotZ;
+        this.game.renderer.add(rightRail);
+        this.meshes.push(rightRail);
+    }
+    
+    /**
+     * Create ramp entrance with flared opening
+     */
+    createRampEntrance(x, y, isLeft) {
+        const entranceMaterial = new THREE.MeshStandardMaterial({
+            color: 0xff6600,
+            metalness: 0.6,
+            roughness: 0.4,
+            emissive: 0xff3300,
+            emissiveIntensity: 0.4
+        });
+        
+        // Flared entrance shape
+        const entranceShape = new THREE.Shape();
+        const flareWidth = 1.2;
+        const rampWidth = 0.8;
+        
+        if (isLeft) {
+            entranceShape.moveTo(-flareWidth/2, 0);
+            entranceShape.lineTo(-rampWidth/2, 0.8);
+            entranceShape.lineTo(rampWidth/2, 0.8);
+            entranceShape.lineTo(flareWidth/2, 0);
+            entranceShape.lineTo(-flareWidth/2, 0);
+        } else {
+            entranceShape.moveTo(-flareWidth/2, 0);
+            entranceShape.lineTo(-rampWidth/2, 0.8);
+            entranceShape.lineTo(rampWidth/2, 0.8);
+            entranceShape.lineTo(flareWidth/2, 0);
+            entranceShape.lineTo(-flareWidth/2, 0);
+        }
+        
+        const entranceGeometry = new THREE.ExtrudeGeometry(entranceShape, {
+            depth: 0.15,
+            bevelEnabled: false
+        });
+        
+        const entranceMesh = new THREE.Mesh(entranceGeometry, entranceMaterial);
+        entranceMesh.position.set(x, y, 0.1);
+        entranceMesh.rotation.x = -Math.PI / 2;
+        
+        this.game.renderer.add(entranceMesh);
+        this.meshes.push(entranceMesh);
+        
+        // Add arrow indicator
+        this.addRampArrow(x, y - 0.5, isLeft);
+    }
+    
+    /**
+     * Add illuminated arrow pointing to ramp
+     */
+    addRampArrow(x, y, isLeft) {
+        const arrowGeometry = new THREE.ConeGeometry(0.3, 0.6, 3);
+        const arrowMaterial = new THREE.MeshBasicMaterial({
+            color: 0x00ff00,
+            transparent: true,
+            opacity: 0.8
+        });
+        
+        const arrow = new THREE.Mesh(arrowGeometry, arrowMaterial);
+        arrow.position.set(x, y, 0.3);
+        arrow.rotation.x = Math.PI / 2;
+        arrow.rotation.z = isLeft ? -Math.PI / 4 : Math.PI / 4;
+        
+        this.game.renderer.add(arrow);
+        this.meshes.push(arrow);
+    }
+    
+    /**
+     * Create ramp exit that deposits balls at top
+     */
+    createRampExit(exitPoint, isLeft) {
+        const exitMaterial = new THREE.MeshStandardMaterial({
+            color: 0x00ff66,
+            metalness: 0.5,
+            roughness: 0.4,
+            emissive: 0x00aa44,
+            emissiveIntensity: 0.5
+        });
+        
+        // Exit funnel
+        const exitGeometry = new THREE.ConeGeometry(0.5, 0.8, 16, 1, true);
+        const exitMesh = new THREE.Mesh(exitGeometry, exitMaterial);
+        exitMesh.position.set(exitPoint.x, exitPoint.y, exitPoint.z);
+        exitMesh.rotation.x = Math.PI;
+        
+        this.game.renderer.add(exitMesh);
+        this.meshes.push(exitMesh);
     }
 
     /**

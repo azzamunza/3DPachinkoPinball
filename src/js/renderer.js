@@ -150,75 +150,148 @@ export class Renderer {
     }
 
     /**
-     * Setup scene lighting
+     * Setup scene lighting - Requirement #7: No direct light, only backlit LEDs
+     * Based on pinball machine lighting reference
      */
     setupLighting() {
-        // Directional Light (Primary - Arcade Spotlight)
-        const dirLight = new THREE.DirectionalLight(
-            CONFIG.LIGHTING.DIRECTIONAL.COLOR,
-            CONFIG.LIGHTING.DIRECTIONAL.INTENSITY
-        );
-        dirLight.position.set(
-            CONFIG.LIGHTING.DIRECTIONAL.POSITION.x,
-            CONFIG.LIGHTING.DIRECTIONAL.POSITION.y,
-            CONFIG.LIGHTING.DIRECTIONAL.POSITION.z
-        );
+        // NO directional light - only backlit LEDs (Requirement #7)
+        // Remove direct lights and use only ambient and LED backlighting
         
-        // Shadow settings
-        dirLight.castShadow = true;
-        dirLight.shadow.mapSize.width = CONFIG.RENDERING.SHADOW_MAP_SIZE;
-        dirLight.shadow.mapSize.height = CONFIG.RENDERING.SHADOW_MAP_SIZE;
-        dirLight.shadow.camera.near = 1;
-        dirLight.shadow.camera.far = 50;
-        dirLight.shadow.camera.left = -15;
-        dirLight.shadow.camera.right = 15;
-        dirLight.shadow.camera.top = 15;
-        dirLight.shadow.camera.bottom = -15;
-        dirLight.shadow.bias = -0.001;
-        dirLight.shadow.normalBias = 0.02;
-        
-        this.scene.add(dirLight);
-        this.directionalLight = dirLight;
-        
-        // Fill Light (Secondary)
-        const fillLight = new THREE.DirectionalLight(
-            CONFIG.LIGHTING.FILL.COLOR,
-            CONFIG.LIGHTING.FILL.INTENSITY
-        );
-        fillLight.position.set(
-            CONFIG.LIGHTING.FILL.POSITION.x,
-            CONFIG.LIGHTING.FILL.POSITION.y,
-            CONFIG.LIGHTING.FILL.POSITION.z
-        );
-        this.scene.add(fillLight);
-        
-        // Ambient Light
-        const ambientLight = new THREE.AmbientLight(
-            CONFIG.LIGHTING.AMBIENT.COLOR,
-            CONFIG.LIGHTING.AMBIENT.INTENSITY
-        );
+        // Very dim ambient light (simulates darkness with LED illumination)
+        const ambientLight = new THREE.AmbientLight(0x0a0a15, 0.15);
         this.scene.add(ambientLight);
         
-        // Add some neon accent lights for arcade feel
+        // Backlit LED lighting under the playfield (Requirement #7)
+        this.addBacklitLEDs();
+        
+        // Add neon accent lights for arcade feel
         this.addNeonLights();
         
-        // Add LED strip lighting
+        // Add LED strip lighting around edges
         this.addLEDLighting();
+        
+        // Store a dummy reference for quality adjustment
+        this.directionalLight = { shadow: { mapSize: { width: 0, height: 0 }, map: null } };
+        
+        // Disable shadows since we're using LED lighting
+        this.renderer.shadowMap.enabled = false;
+    }
+    
+    /**
+     * Add backlit LEDs under the playfield (Requirement #7)
+     * Creates vibrant, illuminating effect like pinball machines
+     */
+    addBacklitLEDs() {
+        this.backlitLEDs = [];
+        
+        // Vibrant LED colors for pinball-style illumination
+        const ledColors = [
+            0xff0066, // Hot pink
+            0x00ff66, // Neon green
+            0x6600ff, // Purple
+            0xff6600, // Orange
+            0x00ffff, // Cyan
+            0xffff00, // Yellow
+            0xff00ff, // Magenta
+            0x00ff00  // Green
+        ];
+        
+        // Create grid of backlit LEDs under the playfield
+        const width = CONFIG.PLAYFIELD.WIDTH;
+        const height = CONFIG.PLAYFIELD.HEIGHT;
+        const spacing = 1.5;
+        
+        for (let x = -width/2 + 1; x <= width/2 - 1; x += spacing) {
+            for (let y = -height/2 + 2; y <= height/2 - 2; y += spacing) {
+                const colorIndex = Math.floor(Math.random() * ledColors.length);
+                const color = ledColors[colorIndex];
+                
+                // LED light from behind the backboard
+                const led = new THREE.PointLight(color, 0.8, 3);
+                led.position.set(x, y, -0.8); // Behind the backboard
+                this.scene.add(led);
+                
+                this.backlitLEDs.push({
+                    light: led,
+                    baseColor: color,
+                    phase: Math.random() * Math.PI * 2,
+                    baseIntensity: 0.5 + Math.random() * 0.5
+                });
+            }
+        }
+        
+        // Add brighter center LEDs for focus areas
+        const centerLEDs = [
+            { x: 0, y: 3, color: 0xff00ff, intensity: 1.5 },  // Upper center
+            { x: -3, y: 0, color: 0x00ffff, intensity: 1.2 }, // Left mid
+            { x: 3, y: 0, color: 0x00ffff, intensity: 1.2 },  // Right mid
+            { x: 0, y: -2, color: 0xffff00, intensity: 1.5 }, // Lower center (jackpot area)
+            { x: -2, y: -5, color: 0xff6600, intensity: 1.0 }, // Left flipper
+            { x: 2, y: -5, color: 0xff6600, intensity: 1.0 }   // Right flipper
+        ];
+        
+        centerLEDs.forEach(cfg => {
+            const led = new THREE.PointLight(cfg.color, cfg.intensity, 5);
+            led.position.set(cfg.x, cfg.y, -0.6);
+            this.scene.add(led);
+            
+            this.backlitLEDs.push({
+                light: led,
+                baseColor: cfg.color,
+                phase: Math.random() * Math.PI * 2,
+                baseIntensity: cfg.intensity
+            });
+        });
+        
+        // Start backlit LED animation
+        this.animateBacklitLEDs();
+    }
+    
+    /**
+     * Animate backlit LEDs with pulsing effect
+     */
+    animateBacklitLEDs() {
+        const animate = () => {
+            const time = performance.now() * 0.001;
+            
+            this.backlitLEDs.forEach((led, index) => {
+                // Create subtle pulsing effect
+                const pulse = Math.sin(time * 2 + led.phase) * 0.3 + 0.7;
+                led.light.intensity = led.baseIntensity * pulse;
+            });
+            
+            requestAnimationFrame(animate);
+        };
+        animate();
     }
 
     /**
      * Add neon accent lights
      */
     addNeonLights() {
-        // Cyan neon rim light
-        const cyanLight = new THREE.PointLight(0x00f0ff, 0.5, 15);
+        // Cyan neon rim light (brighter for LED-only lighting)
+        const cyanLight = new THREE.PointLight(0x00f0ff, 1.2, 18);
         cyanLight.position.set(-6, 0, 2);
         this.scene.add(cyanLight);
         
         // Magenta neon rim light
-        const magentaLight = new THREE.PointLight(0xff00ff, 0.5, 15);
+        const magentaLight = new THREE.PointLight(0xff00ff, 1.2, 18);
         magentaLight.position.set(6, 0, 2);
         this.scene.add(magentaLight);
+        
+        // Add top edge neon
+        const topNeon = new THREE.PointLight(0xffff00, 0.8, 12);
+        topNeon.position.set(0, 8, 1);
+        this.scene.add(topNeon);
+        
+        // Bottom neon near flippers
+        const bottomNeon1 = new THREE.PointLight(0xff6600, 1.0, 8);
+        bottomNeon1.position.set(-3, -6, 1);
+        this.scene.add(bottomNeon1);
+        
+        const bottomNeon2 = new THREE.PointLight(0xff6600, 1.0, 8);
+        bottomNeon2.position.set(3, -6, 1);
+        this.scene.add(bottomNeon2);
     }
     
     /**

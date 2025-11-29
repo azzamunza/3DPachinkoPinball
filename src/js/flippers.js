@@ -45,7 +45,7 @@ export class Flippers {
     }
 
     /**
-     * Create a single flipper
+     * Create a single flipper - authentic pinball paddle design (Requirement #8)
      */
     createFlipper(side) {
         const isLeft = side === 'left';
@@ -57,38 +57,63 @@ export class Flippers {
         const width = CONFIG.FLIPPERS.WIDTH;
         const height = CONFIG.FLIPPERS.HEIGHT;
         
-        // Create flipper mesh (tapered shape)
+        // Create authentic pinball flipper shape (Requirement #8)
+        // Real pinball flippers have a distinctive tapered shape with rounded ends
         const shape = new THREE.Shape();
-        const taperRatio = 0.6;
+        const baseWidth = width * 1.2;  // Wider at pivot
+        const tipWidth = width * 0.35;   // Narrower at tip
+        const tipRoundRadius = tipWidth / 2;
         
         if (isLeft) {
-            shape.moveTo(0, -width/2);
-            shape.lineTo(length, -width/2 * taperRatio);
-            shape.lineTo(length, width/2 * taperRatio);
-            shape.lineTo(0, width/2);
-            shape.lineTo(0, -width/2);
+            // Base (pivot end) - rounded
+            shape.moveTo(0, baseWidth/2);
+            shape.absarc(0, 0, baseWidth/2, Math.PI/2, -Math.PI/2, true); // Rounded base
+            
+            // Bottom edge - tapered
+            shape.lineTo(length - tipRoundRadius, -tipWidth/2);
+            
+            // Tip - rounded
+            shape.absarc(length - tipRoundRadius, 0, tipWidth/2, -Math.PI/2, Math.PI/2, false);
+            
+            // Top edge - back to base
+            shape.lineTo(0, baseWidth/2);
         } else {
-            shape.moveTo(0, -width/2);
-            shape.lineTo(-length, -width/2 * taperRatio);
-            shape.lineTo(-length, width/2 * taperRatio);
-            shape.lineTo(0, width/2);
-            shape.lineTo(0, -width/2);
+            // Base (pivot end) - rounded
+            shape.moveTo(0, baseWidth/2);
+            shape.absarc(0, 0, baseWidth/2, Math.PI/2, -Math.PI/2, true); // Rounded base
+            
+            // Bottom edge - tapered (mirrored)
+            shape.lineTo(-length + tipRoundRadius, -tipWidth/2);
+            
+            // Tip - rounded
+            shape.absarc(-length + tipRoundRadius, 0, tipWidth/2, -Math.PI/2, Math.PI/2, false);
+            
+            // Top edge - back to base
+            shape.lineTo(0, baseWidth/2);
         }
         
         const extrudeSettings = {
-            depth: height,
+            depth: height * 1.5,  // Thicker flipper
             bevelEnabled: true,
-            bevelThickness: 0.02,
-            bevelSize: 0.02,
-            bevelSegments: 2
+            bevelThickness: 0.03,
+            bevelSize: 0.03,
+            bevelSegments: 3
         };
         
         const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
         geometry.rotateX(Math.PI / 2);
         
-        const material = this.game.renderer.createMaterial(CONFIG.MATERIALS.FLIPPER);
-        flipper.mesh = new THREE.Mesh(geometry, material);
-        flipper.mesh.position.set(position.x, position.y, position.z + 0.2);
+        // Authentic pinball flipper material - usually red or orange rubber-covered
+        const flipperMaterial = new THREE.MeshStandardMaterial({
+            color: 0xff4400,  // Orange-red like real pinball flippers
+            metalness: 0.1,
+            roughness: 0.6,
+            emissive: 0x331100,
+            emissiveIntensity: 0.2
+        });
+        
+        flipper.mesh = new THREE.Mesh(geometry, flipperMaterial);
+        flipper.mesh.position.set(position.x, position.y, position.z + 0.1);
         flipper.mesh.castShadow = true;
         
         // Set initial rotation
@@ -96,18 +121,30 @@ export class Flippers {
         
         this.game.renderer.add(flipper.mesh);
         
-        // Create pivot point visual
-        const pivotGeometry = new THREE.CylinderGeometry(0.15, 0.15, 0.3, 12);
+        // Create pivot point visual (metal shaft)
+        const pivotGeometry = new THREE.CylinderGeometry(0.18, 0.18, 0.4, 16);
         const pivotMaterial = new THREE.MeshStandardMaterial({
-            color: 0xffcc00,
-            metalness: 0.8,
-            roughness: 0.2
+            color: 0xc0c0c0,  // Silver/chrome
+            metalness: 0.95,
+            roughness: 0.1
         });
         flipper.pivot = new THREE.Mesh(pivotGeometry, pivotMaterial);
         flipper.pivot.position.set(position.x, position.y, position.z + 0.2);
         flipper.pivot.rotation.x = Math.PI / 2;
         
         this.game.renderer.add(flipper.pivot);
+        
+        // Add rubber band visual at tip (authentic detail)
+        const rubberGeometry = new THREE.TorusGeometry(tipWidth / 2 + 0.02, 0.02, 8, 16);
+        const rubberMaterial = new THREE.MeshStandardMaterial({
+            color: 0xff2200,
+            roughness: 0.9
+        });
+        const rubberBand = new THREE.Mesh(rubberGeometry, rubberMaterial);
+        const tipX = isLeft ? length - tipRoundRadius : -length + tipRoundRadius;
+        rubberBand.position.set(tipX, 0, height * 0.75);
+        rubberBand.rotation.x = Math.PI / 2;
+        flipper.mesh.add(rubberBand);
         
         // Create physics body
         this.createFlipperPhysics(side, position, length, width, height);
