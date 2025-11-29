@@ -38,7 +38,11 @@ export class Playfield {
      * Create the entire playfield
      */
     create() {
+        // Create tilted playing surface (Requirement #5)
+        this.createTiltedPlaySurface();
         this.createBackboard();
+        this.createBallCatcher(); // Ball catcher at top (Requirement #5)
+        this.createSemiCircularTop(); // Semi-circular top (Requirement #6)
         this.createWalls();
         this.createPegs();
         this.createBumpers();
@@ -47,12 +51,190 @@ export class Playfield {
         this.createFunnel();
         this.createDrains();
         this.createFloor();
-        this.createVPockets();      // New: Authentic Pachinko V-Pockets
-        this.createTulipGates();    // New: Mechanical tulip gates
-        this.createFeatureZones();  // New: Special feature zones
-        this.createStartPocket();   // New: Ball entry guide
+        this.createVPockets();      // Authentic Pachinko V-Pockets
+        this.createTulipGates();    // Mechanical tulip gates
+        this.createFeatureZones();  // Special feature zones
+        this.createStartPocket();   // Ball entry guide
         
-        console.log('Playfield created with authentic Pachinko features');
+        console.log('Playfield created with tilted surface and ball catcher');
+    }
+    
+    /**
+     * Create tilted playing surface (Requirement #5)
+     * The playfield is tilted back at the top like a real pinball/pachinko machine
+     * Side profile shows the play area tilted with ball catcher section at top
+     */
+    createTiltedPlaySurface() {
+        const width = CONFIG.PLAYFIELD.WIDTH;
+        const height = CONFIG.PLAYFIELD.HEIGHT;
+        
+        // The playfield tilt angle (top tilted back)
+        const tiltAngle = CONFIG.PHYSICS.PLAYFIELD_TILT;
+        
+        // Create the tilted play surface visual (transparent to show backboard)
+        const surfaceGeometry = new THREE.PlaneGeometry(width, height);
+        const surfaceMaterial = new THREE.MeshStandardMaterial({
+            color: 0x222233,
+            transparent: true,
+            opacity: 0.1,
+            side: THREE.DoubleSide
+        });
+        
+        const surface = new THREE.Mesh(surfaceGeometry, surfaceMaterial);
+        // Position at z=0 and rotate around X-axis to tilt top backward
+        surface.position.set(0, 0, 0);
+        surface.rotation.x = tiltAngle;
+        
+        // Don't add to scene - physics handles the tilt
+        // this.game.renderer.add(surface);
+        this.playSurface = surface;
+    }
+    
+    /**
+     * Create ball catcher section at top (Requirement #5)
+     * This is the elevated section where the mortar cannon shoots balls into
+     */
+    createBallCatcher() {
+        const width = CONFIG.PLAYFIELD.WIDTH;
+        const catcherHeight = 2.5;
+        const catcherY = CONFIG.PLAYFIELD.HEIGHT / 2 + catcherHeight / 2;
+        
+        // Catcher back wall (curved shelf above main playfield)
+        const catcherMaterial = new THREE.MeshStandardMaterial({
+            color: 0x333344,
+            metalness: 0.5,
+            roughness: 0.5,
+            emissive: 0x111122,
+            emissiveIntensity: 0.2
+        });
+        
+        // Catcher floor (horizontal shelf)
+        const catcherFloorGeo = new THREE.BoxGeometry(width - 1, catcherHeight * 0.3, 0.3);
+        const catcherFloor = new THREE.Mesh(catcherFloorGeo, catcherMaterial);
+        catcherFloor.position.set(0, catcherY - catcherHeight/2, 0.3);
+        this.game.renderer.add(catcherFloor);
+        this.meshes.push(catcherFloor);
+        
+        // Add physics for catcher floor
+        const catcherFloorBody = this.game.physics.createBox(
+            { x: (width - 1) / 2, y: catcherHeight * 0.15, z: 0.15 },
+            0,
+            { x: 0, y: catcherY - catcherHeight/2, z: 0.3 },
+            null,
+            this.game.physics.materials.wall
+        );
+        this.game.physics.addBody(catcherFloorBody);
+        
+        // Catcher back wall
+        const catcherBackGeo = new THREE.BoxGeometry(width - 1, catcherHeight, 0.2);
+        const catcherBack = new THREE.Mesh(catcherBackGeo, catcherMaterial);
+        catcherBack.position.set(0, catcherY, -0.5);
+        this.game.renderer.add(catcherBack);
+        this.meshes.push(catcherBack);
+        
+        // Side guide rails for catcher
+        const railMaterial = new THREE.MeshStandardMaterial({
+            color: 0xc0c0c0,
+            metalness: 0.9,
+            roughness: 0.2
+        });
+        
+        const leftRailGeo = new THREE.BoxGeometry(0.2, catcherHeight, 0.5);
+        const leftRail = new THREE.Mesh(leftRailGeo, railMaterial);
+        leftRail.position.set(-width/2 + 0.6, catcherY, 0.2);
+        this.game.renderer.add(leftRail);
+        this.meshes.push(leftRail);
+        
+        const rightRail = new THREE.Mesh(leftRailGeo.clone(), railMaterial);
+        rightRail.position.set(width/2 - 0.6, catcherY, 0.2);
+        this.game.renderer.add(rightRail);
+        this.meshes.push(rightRail);
+        
+        // Sloped transition from catcher to main playfield
+        const slopeMaterial = new THREE.MeshStandardMaterial({
+            color: 0x444455,
+            metalness: 0.4,
+            roughness: 0.6
+        });
+        
+        const slopeGeo = new THREE.BoxGeometry(width - 1, 0.8, 0.2);
+        const slope = new THREE.Mesh(slopeGeo, slopeMaterial);
+        slope.position.set(0, CONFIG.PLAYFIELD.HEIGHT / 2 - 0.3, 0.1);
+        slope.rotation.x = -Math.PI / 8; // Angled to guide balls down
+        this.game.renderer.add(slope);
+        this.meshes.push(slope);
+        
+        // Physics for slope
+        const slopeBody = this.game.physics.createBox(
+            { x: (width - 1) / 2, y: 0.4, z: 0.1 },
+            0,
+            { x: 0, y: CONFIG.PLAYFIELD.HEIGHT / 2 - 0.3, z: 0.1 },
+            { x: -Math.PI / 8, y: 0, z: 0 },
+            this.game.physics.materials.ramp
+        );
+        this.game.physics.addBody(slopeBody);
+        
+        console.log('Ball catcher section created');
+    }
+    
+    /**
+     * Create semi-circular top (Requirement #6)
+     * Front view shows a semi-circular top for the Pachinko machine
+     */
+    createSemiCircularTop() {
+        const width = CONFIG.PLAYFIELD.WIDTH;
+        const radius = width / 2;
+        const centerY = CONFIG.PLAYFIELD.HEIGHT / 2;
+        
+        // Create semi-circular top frame using arc
+        const arcPoints = [];
+        const numPoints = 32;
+        
+        for (let i = 0; i <= numPoints; i++) {
+            const angle = Math.PI * (i / numPoints);
+            const x = Math.cos(angle) * radius;
+            const y = centerY + Math.sin(angle) * (radius * 0.4);
+            arcPoints.push(new THREE.Vector3(x, y, 0));
+        }
+        
+        // Create semi-circular frame using tube
+        const curve = new THREE.CatmullRomCurve3(arcPoints);
+        const tubeGeometry = new THREE.TubeGeometry(curve, 32, 0.3, 8, false);
+        const frameMaterial = new THREE.MeshStandardMaterial({
+            color: 0xc0c0c0,
+            metalness: 0.9,
+            roughness: 0.2,
+            emissive: 0x333333,
+            emissiveIntensity: 0.1
+        });
+        
+        const arcFrame = new THREE.Mesh(tubeGeometry, frameMaterial);
+        arcFrame.position.z = 0.4;
+        this.game.renderer.add(arcFrame);
+        this.meshes.push(arcFrame);
+        
+        // Add decorative lights along the arc
+        const lightColors = [0xff0066, 0x00ff66, 0x6600ff, 0xffff00, 0x00ffff];
+        for (let i = 0; i <= numPoints; i += 4) {
+            const angle = Math.PI * (i / numPoints);
+            const x = Math.cos(angle) * (radius + 0.1);
+            const y = centerY + Math.sin(angle) * (radius * 0.4 + 0.1);
+            
+            const lightGeo = new THREE.SphereGeometry(0.1, 8, 8);
+            const color = lightColors[Math.floor(i / 4) % lightColors.length];
+            const lightMat = new THREE.MeshBasicMaterial({ color });
+            const light = new THREE.Mesh(lightGeo, lightMat);
+            light.position.set(x, y, 0.5);
+            this.game.renderer.add(light);
+            this.meshes.push(light);
+            
+            // Point light for glow
+            const pointLight = new THREE.PointLight(color, 0.3, 2);
+            pointLight.position.set(x, y, 0.6);
+            this.game.renderer.add(pointLight);
+        }
+        
+        console.log('Semi-circular top created');
     }
 
     /**

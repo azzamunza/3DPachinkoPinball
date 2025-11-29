@@ -117,64 +117,79 @@ export class JackpotMachine {
     }
 
     /**
-     * Create 3D machine visual with spinning reels (visible on playfield)
-     * CENTERED in the playfield (as per reference image)
+     * Create 3D machine visual using the new digital Jackpot Machine (Requirement #1)
+     * The front surface is flush with the surface where balls roll down
+     * Positioned CENTERED in the playfield
      */
     createMachineVisual() {
         const slotArea = CONFIG.PLAYFIELD.PACHINKO.SLOT_MACHINE_AREA;
         const group = new THREE.Group();
-        // Position: CENTERED in playfield
-        group.position.set(slotArea.POSITION.x, slotArea.POSITION.y, slotArea.POSITION.z);
         
-        // Machine cabinet body - Modern arcade style
-        const bodyGeometry = new THREE.BoxGeometry(slotArea.WIDTH, slotArea.HEIGHT, 0.8);
+        // Position: CENTERED in playfield, flush with playing surface (z = -0.4 where balls roll)
+        // The front surface should be at z = -0.4 to be flush with the back playing surface
+        const flushZ = -0.4; // Same as the back playing surface where balls roll
+        group.position.set(slotArea.POSITION.x, slotArea.POSITION.y, flushZ);
+        
+        // Machine cabinet body - embedded into the playfield
+        // The machine is recessed so its front is flush with the playing surface
+        const cabinetDepth = 0.6;
+        const bodyGeometry = new THREE.BoxGeometry(slotArea.WIDTH, slotArea.HEIGHT, cabinetDepth);
         const bodyMaterial = new THREE.MeshStandardMaterial({
             color: 0x1a1a2e, // Dark modern cabinet
             metalness: 0.6,
-            roughness: 0.4
+            roughness: 0.4,
+            emissive: 0x0a0a15,
+            emissiveIntensity: 0.2
         });
         const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-        body.castShadow = true;
+        body.position.z = -cabinetDepth / 2; // Recessed behind the playing surface
         group.add(body);
         
-        // Metallic frame around the cabinet
-        const frameGeometry = new THREE.BoxGeometry(slotArea.WIDTH + 0.2, slotArea.HEIGHT + 0.2, 0.1);
+        // Front bezel frame - flush with playing surface (Requirement #1)
+        const frameGeometry = new THREE.BoxGeometry(slotArea.WIDTH + 0.2, slotArea.HEIGHT + 0.2, 0.05);
         const frameMaterial = new THREE.MeshStandardMaterial({
-            color: 0x808080, // Silver frame
-            metalness: 0.9,
-            roughness: 0.2
-        });
-        const frame = new THREE.Mesh(frameGeometry, frameMaterial);
-        frame.position.z = 0.4;
-        group.add(frame);
-        
-        // Gold trim accent
-        const trimGeometry = new THREE.BoxGeometry(slotArea.WIDTH + 0.1, slotArea.HEIGHT + 0.1, 0.05);
-        const trimMaterial = new THREE.MeshStandardMaterial({
-            color: 0xFFD700, // Gold
-            metalness: 0.9,
+            color: 0xc0c0c0, // Silver/chrome frame
+            metalness: 0.95,
             roughness: 0.1
         });
-        const trim = new THREE.Mesh(trimGeometry, trimMaterial);
-        trim.position.z = 0.45;
-        group.add(trim);
+        const frame = new THREE.Mesh(frameGeometry, frameMaterial);
+        frame.position.z = 0; // Flush with playing surface
+        group.add(frame);
         
-        // Create the reels display area (dark screen)
+        // Inner display border with neon glow
+        const innerFrameGeometry = new THREE.BoxGeometry(slotArea.WIDTH - 0.1, slotArea.HEIGHT - 0.1, 0.03);
+        const innerFrameMaterial = new THREE.MeshStandardMaterial({
+            color: 0xff6600, // Orange/gold accent
+            metalness: 0.8,
+            roughness: 0.2,
+            emissive: 0xff3300,
+            emissiveIntensity: 0.5
+        });
+        const innerFrame = new THREE.Mesh(innerFrameGeometry, innerFrameMaterial);
+        innerFrame.position.z = -0.01;
+        group.add(innerFrame);
+        
+        // Create the reels display area (dark recessed screen)
         const displayBg = new THREE.Mesh(
             new THREE.PlaneGeometry(slotArea.WIDTH - 0.4, slotArea.HEIGHT - 0.6),
-            new THREE.MeshBasicMaterial({ color: 0x0a0a15 })
+            new THREE.MeshBasicMaterial({ 
+                color: 0x050510,
+                transparent: true,
+                opacity: 0.95
+            })
         );
-        displayBg.position.set(0, 0.1, 0.46);
+        displayBg.position.set(0, 0.1, -0.02);
         group.add(displayBg);
         
-        // Create 3 spinning reels
+        // Create 3 spinning reels - positioned behind the surface
         this.reel3DObjects = [];
         const reelWidth = 0.7;
         const reelSpacing = 1.1;
         
         for (let i = 0; i < 3; i++) {
             const reelGroup = new THREE.Group();
-            reelGroup.position.set(-reelSpacing + i * reelSpacing, 0.1, 0.5);
+            // Reels are slightly recessed (z = -0.1 relative to group)
+            reelGroup.position.set(-reelSpacing + i * reelSpacing, 0.1, -0.1);
             
             // Reel cylinder
             const reelGeometry = new THREE.CylinderGeometry(0.35, 0.35, reelWidth, 16, 1, true);
@@ -204,19 +219,23 @@ export class JackpotMachine {
                 map: stripTexture,
                 side: THREE.DoubleSide,
                 metalness: 0.2,
-                roughness: 0.5
+                roughness: 0.5,
+                emissive: 0x111111,
+                emissiveIntensity: 0.3
             });
             
             const reel = new THREE.Mesh(reelGeometry, reelMaterial);
             reel.rotation.z = Math.PI / 2;
             reelGroup.add(reel);
             
-            // Side caps (gold)
+            // Side caps (gold) - slightly behind
             const capGeometry = new THREE.CircleGeometry(0.4, 16);
             const capMaterial = new THREE.MeshStandardMaterial({
                 color: 0xFFD700,
                 metalness: 0.8,
-                roughness: 0.2
+                roughness: 0.2,
+                emissive: 0x664400,
+                emissiveIntensity: 0.3
             });
             
             const leftCap = new THREE.Mesh(capGeometry, capMaterial);
@@ -240,7 +259,7 @@ export class JackpotMachine {
             });
         }
         
-        // Add "JACKPOT" text sign on top
+        // Add "JACKPOT" text sign on top - flush with surface
         const signGeometry = new THREE.PlaneGeometry(3.5, 0.5);
         const signCanvas = this.createJackpotSign();
         const signTexture = new THREE.CanvasTexture(signCanvas);
@@ -249,65 +268,86 @@ export class JackpotMachine {
             transparent: true
         });
         const sign = new THREE.Mesh(signGeometry, signMaterial);
-        sign.position.set(0, 1.2, 0.61);
+        sign.position.set(0, 1.4, 0.01); // Just slightly in front of playing surface
         group.add(sign);
         this.jackpotSign = sign;
         
-        // Add flashing lights on top
+        // Add flashing lights around frame - flush with surface
         this.cabinetLights = [];
         const lightPositions = [
-            { x: -1.8, y: 1.3 },
-            { x: -1.2, y: 1.4 },
-            { x: -0.6, y: 1.45 },
-            { x: 0, y: 1.5 },
-            { x: 0.6, y: 1.45 },
-            { x: 1.2, y: 1.4 },
-            { x: 1.8, y: 1.3 }
+            { x: -1.8, y: 1.5 },
+            { x: -1.2, y: 1.6 },
+            { x: -0.6, y: 1.65 },
+            { x: 0, y: 1.7 },
+            { x: 0.6, y: 1.65 },
+            { x: 1.2, y: 1.6 },
+            { x: 1.8, y: 1.5 }
         ];
         
         lightPositions.forEach((pos, i) => {
-            const lightGeo = new THREE.SphereGeometry(0.08, 8, 8);
+            const lightGeo = new THREE.SphereGeometry(0.1, 8, 8);
             const lightMat = new THREE.MeshBasicMaterial({
                 color: i % 2 === 0 ? 0xff0000 : 0xffff00
             });
             const light = new THREE.Mesh(lightGeo, lightMat);
-            light.position.set(pos.x, pos.y, 0.62);
+            light.position.set(pos.x, pos.y, 0.02); // Flush with surface
             group.add(light);
             this.cabinetLights.push({ mesh: light, phase: i * 0.5 });
+            
+            // Add point light for glow effect
+            const pointLight = new THREE.PointLight(i % 2 === 0 ? 0xff0000 : 0xffff00, 0.5, 2);
+            pointLight.position.copy(light.position);
+            group.add(pointLight);
         });
         
-        // Neon frame
-        const neonFrameGeometry = new THREE.EdgesGeometry(bodyGeometry);
-        const neonFrameMaterial = new THREE.LineBasicMaterial({ 
-            color: 0x00ffff,
-            linewidth: 2
-        });
-        const neonFrame = new THREE.LineSegments(neonFrameGeometry, neonFrameMaterial);
-        group.add(neonFrame);
-        
-        // Handle/lever on the side
-        const handleGroup = new THREE.Group();
-        handleGroup.position.set(2.2, 0, 0);
-        
-        const handleBase = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.1, 0.1, 0.8, 8),
-            new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.8 })
-        );
-        handleBase.rotation.z = Math.PI / 2;
-        handleGroup.add(handleBase);
-        
-        const handleBall = new THREE.Mesh(
-            new THREE.SphereGeometry(0.15, 16, 16),
-            new THREE.MeshStandardMaterial({ color: 0xff0000, metalness: 0.6 })
-        );
-        handleBall.position.x = 0.4;
-        handleGroup.add(handleBall);
-        
-        group.add(handleGroup);
-        this.leverHandle = handleGroup;
+        // LED border around the jackpot machine
+        this.createJackpotLEDBorder(group, slotArea.WIDTH, slotArea.HEIGHT);
         
         this.machine = group;
         this.game.renderer.add(group);
+    }
+    
+    /**
+     * Create LED border around jackpot machine for visibility
+     */
+    createJackpotLEDBorder(group, width, height) {
+        const ledColors = [0xff00ff, 0x00ffff, 0xffff00, 0xff6600];
+        const ledSpacing = 0.4;
+        
+        // Top edge
+        for (let x = -width/2 + 0.2; x <= width/2 - 0.2; x += ledSpacing) {
+            const color = ledColors[Math.floor((x + width/2) / ledSpacing) % ledColors.length];
+            this.createJackpotLED(group, x, height/2, color);
+        }
+        
+        // Bottom edge
+        for (let x = -width/2 + 0.2; x <= width/2 - 0.2; x += ledSpacing) {
+            const color = ledColors[Math.floor((x + width/2) / ledSpacing) % ledColors.length];
+            this.createJackpotLED(group, x, -height/2, color);
+        }
+        
+        // Left edge
+        for (let y = -height/2 + 0.2; y <= height/2 - 0.2; y += ledSpacing) {
+            const color = ledColors[Math.floor((y + height/2) / ledSpacing) % ledColors.length];
+            this.createJackpotLED(group, -width/2, y, color);
+        }
+        
+        // Right edge
+        for (let y = -height/2 + 0.2; y <= height/2 - 0.2; y += ledSpacing) {
+            const color = ledColors[Math.floor((y + height/2) / ledSpacing) % ledColors.length];
+            this.createJackpotLED(group, width/2, y, color);
+        }
+    }
+    
+    /**
+     * Create single LED for jackpot border
+     */
+    createJackpotLED(group, x, y, color) {
+        const ledGeo = new THREE.SphereGeometry(0.06, 6, 6);
+        const ledMat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.9 });
+        const led = new THREE.Mesh(ledGeo, ledMat);
+        led.position.set(x, y, 0.01);
+        group.add(led);
     }
     
     /**
