@@ -176,7 +176,8 @@ export const CONFIG = {
             MIN: 0,
             MAX: 100,
             CHARGE_TIME: 2.0,
-            MULTIPLIER: 1.0
+            MULTIPLIER: 2.0, // Default power set to 2.0 (Requirement #3)
+            DEFAULT: 2.0  // Default power value
         },
         ROTATION: {
             MIN: -60 * (Math.PI / 180), // Wider rotation range

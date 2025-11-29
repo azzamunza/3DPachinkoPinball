@@ -932,17 +932,20 @@ export class Playfield {
     }
 
     /**
-     * Create a single peg (silver pin)
+     * Create a single peg (silver pin) - positioned at the back playing surface (Requirement #4)
      */
     createPeg(position, material) {
         const radius = CONFIG.PLAYFIELD.PEGS.RADIUS;
         const height = CONFIG.PLAYFIELD.PEGS.HEIGHT;
         
+        // Position peg at back surface (z = -0.4 so it contacts the backboard at z = -0.5)
+        const pegZ = -0.4 + height / 2; // Pegs sit on the back surface (Requirement #4)
+        
         // Visual mesh (cylinder)
         const geometry = new THREE.CylinderGeometry(radius, radius, height, 8);
         const mesh = new THREE.Mesh(geometry, material);
-        mesh.position.set(position.x, position.y, position.z);
-        mesh.rotation.x = Math.PI / 2; // Rotate to face forward
+        mesh.position.set(position.x, position.y, pegZ);
+        mesh.rotation.x = Math.PI / 2; // Rotate to face forward (stick out from backboard)
         mesh.castShadow = true;
         
         // Add emissive property for LED glow effect
@@ -953,19 +956,20 @@ export class Playfield {
         this.game.renderer.add(mesh);
         this.meshes.push(mesh);
         
-        // Physics body (use sphere for simpler collision)
+        // Physics body - positioned at back surface (Requirement #4)
+        const bodyPosition = { x: position.x, y: position.y, z: pegZ };
         const body = this.game.physics.createCylinder(
-            radius, radius, height, 8, 0, position,
+            radius, radius, height, 8, 0, bodyPosition,
             this.game.physics.materials.peg
         );
         
         // Add collision callback
         body.addEventListener('collide', (e) => {
-            this.onPegHit(e, mesh, position);
+            this.onPegHit(e, mesh, bodyPosition);
         });
         
         this.game.physics.addBody(body);
-        this.pegs.push({ mesh, body, position });
+        this.pegs.push({ mesh, body, position: bodyPosition });
     }
 
     /**
@@ -1233,64 +1237,229 @@ export class Playfield {
     }
 
     /**
-     * Create ramps
+     * Create ramps - Requirement #9: Add ramps inline with flippers for balls to return to top
      */
     createRamps() {
-        // Left ramp
-        this.createRamp(
-            CONFIG.PLAYFIELD.RAMPS.LEFT.POSITION,
-            Math.PI / 8,
-            'left'
-        );
+        // Left return ramp - aligned with left flipper direction
+        this.createReturnRamp('left');
         
-        // Right ramp
-        this.createRamp(
-            CONFIG.PLAYFIELD.RAMPS.RIGHT.POSITION,
-            -Math.PI / 8,
-            'right'
-        );
+        // Right return ramp - aligned with right flipper direction
+        this.createReturnRamp('right');
         
-        console.log(`Created ${this.ramps.length} ramps`);
+        console.log(`Created ${this.ramps.length} return ramps`);
     }
 
     /**
-     * Create a single ramp
+     * Create a return ramp that takes balls back to the top (Requirement #9)
      */
-    createRamp(position, angle, side) {
-        const material = this.game.renderer.createMaterial(CONFIG.MATERIALS.RAMP);
+    createReturnRamp(side) {
+        const isLeft = side === 'left';
         
-        // Ramp geometry (curved surface)
-        const length = 3;
-        const width = 0.8;
+        // Ramp position aligned with flipper hitting direction
+        const flipperX = isLeft ? CONFIG.FLIPPERS.LEFT.POSITION.x : CONFIG.FLIPPERS.RIGHT.POSITION.x;
+        const flipperY = CONFIG.FLIPPERS.LEFT.POSITION.y;
         
-        const geometry = new THREE.BoxGeometry(width, length, 0.2);
-        const mesh = new THREE.Mesh(geometry, material);
-        mesh.position.set(position.x, position.y, position.z);
-        mesh.rotation.z = angle;
-        mesh.rotation.x = -0.2; // Slight tilt
-        mesh.castShadow = true;
-        mesh.receiveShadow = true;
+        // Ramp entrance positioned where flippers would hit balls
+        const entranceX = isLeft ? flipperX + 2 : flipperX - 2;
+        const entranceY = flipperY + 1;
         
-        this.game.renderer.add(mesh);
-        this.meshes.push(mesh);
+        // Create curved ramp using multiple segments
+        const rampWidth = 0.8;
+        const rampHeight = 0.15;
+        const numSegments = 8;
         
-        // Physics body
-        const body = this.game.physics.createBox(
-            { x: width/2, y: length/2, z: 0.1 },
-            0,
-            position,
-            { x: -0.2, y: 0, z: angle },
-            this.game.physics.materials.ramp
-        );
+        // Calculate ramp path - curves up and inward toward top center
+        const rampPoints = [];
+        for (let i = 0; i <= numSegments; i++) {
+            const t = i / numSegments;
+            
+            // Curve from flipper area to top of playfield
+            const x = entranceX + (isLeft ? 1 : -1) * t * (CONFIG.PLAYFIELD.WIDTH / 4);
+            const y = entranceY + t * (CONFIG.PLAYFIELD.HEIGHT * 0.7);
+            const z = 0.1 + t * 0.3; // Rises above the playfield slightly
+            
+            rampPoints.push({ x, y, z });
+        }
         
-        body.userData = { isRamp: true, side };
-        
-        body.addEventListener('collide', (e) => {
-            this.onRampEnter(e, side);
+        // Ramp material - metallic with LED glow
+        const rampMaterial = new THREE.MeshStandardMaterial({
+            color: 0x4444aa,
+            metalness: 0.7,
+            roughness: 0.3,
+            emissive: 0x1111ff,
+            emissiveIntensity: 0.3
         });
         
-        this.game.physics.addBody(body);
-        this.ramps.push({ mesh, body, position, side });
+        // Create ramp segments
+        for (let i = 0; i < numSegments; i++) {
+            const p1 = rampPoints[i];
+            const p2 = rampPoints[i + 1];
+            
+            const dx = p2.x - p1.x;
+            const dy = p2.y - p1.y;
+            const dz = p2.z - p1.z;
+            const segLength = Math.sqrt(dx*dx + dy*dy + dz*dz);
+            
+            const midX = (p1.x + p2.x) / 2;
+            const midY = (p1.y + p2.y) / 2;
+            const midZ = (p1.z + p2.z) / 2;
+            
+            // Create segment mesh
+            const segGeometry = new THREE.BoxGeometry(rampWidth, segLength, rampHeight);
+            const segMesh = new THREE.Mesh(segGeometry, rampMaterial.clone());
+            segMesh.position.set(midX, midY, midZ);
+            
+            // Calculate rotation to align with path
+            const rotZ = Math.atan2(dx, dy);
+            const rotX = Math.atan2(dz, Math.sqrt(dx*dx + dy*dy));
+            segMesh.rotation.z = -rotZ;
+            segMesh.rotation.x = rotX;
+            
+            this.game.renderer.add(segMesh);
+            this.meshes.push(segMesh);
+            
+            // Add rails on sides of ramp
+            this.addRampRails(midX, midY, midZ, rotZ, rampWidth, segLength);
+            
+            // Physics body for the segment
+            const halfExtents = { x: rampWidth/2, y: segLength/2, z: rampHeight/2 };
+            const body = this.game.physics.createBox(
+                halfExtents,
+                0,
+                { x: midX, y: midY, z: midZ },
+                { x: rotX, y: 0, z: -rotZ },
+                this.game.physics.materials.ramp
+            );
+            
+            body.userData = { isRamp: true, side, segment: i };
+            this.game.physics.addBody(body);
+        }
+        
+        // Add ramp entrance guide
+        this.createRampEntrance(entranceX, entranceY, isLeft);
+        
+        // Add ramp exit at top
+        this.createRampExit(rampPoints[numSegments], isLeft);
+        
+        this.ramps.push({ side, points: rampPoints });
+    }
+    
+    /**
+     * Add rails to the sides of the ramp
+     */
+    addRampRails(x, y, z, rotZ, rampWidth, segLength) {
+        const railMaterial = new THREE.MeshStandardMaterial({
+            color: 0x00ffff,
+            metalness: 0.9,
+            roughness: 0.2,
+            emissive: 0x00aaaa,
+            emissiveIntensity: 0.5
+        });
+        
+        const railGeometry = new THREE.BoxGeometry(0.08, segLength, 0.25);
+        
+        // Left rail
+        const leftRail = new THREE.Mesh(railGeometry, railMaterial);
+        leftRail.position.set(x - rampWidth/2 * Math.cos(rotZ), y - rampWidth/2 * Math.sin(rotZ), z + 0.1);
+        leftRail.rotation.z = -rotZ;
+        this.game.renderer.add(leftRail);
+        this.meshes.push(leftRail);
+        
+        // Right rail
+        const rightRail = new THREE.Mesh(railGeometry, railMaterial.clone());
+        rightRail.position.set(x + rampWidth/2 * Math.cos(rotZ), y + rampWidth/2 * Math.sin(rotZ), z + 0.1);
+        rightRail.rotation.z = -rotZ;
+        this.game.renderer.add(rightRail);
+        this.meshes.push(rightRail);
+    }
+    
+    /**
+     * Create ramp entrance with flared opening
+     */
+    createRampEntrance(x, y, isLeft) {
+        const entranceMaterial = new THREE.MeshStandardMaterial({
+            color: 0xff6600,
+            metalness: 0.6,
+            roughness: 0.4,
+            emissive: 0xff3300,
+            emissiveIntensity: 0.4
+        });
+        
+        // Flared entrance shape
+        const entranceShape = new THREE.Shape();
+        const flareWidth = 1.2;
+        const rampWidth = 0.8;
+        
+        if (isLeft) {
+            entranceShape.moveTo(-flareWidth/2, 0);
+            entranceShape.lineTo(-rampWidth/2, 0.8);
+            entranceShape.lineTo(rampWidth/2, 0.8);
+            entranceShape.lineTo(flareWidth/2, 0);
+            entranceShape.lineTo(-flareWidth/2, 0);
+        } else {
+            entranceShape.moveTo(-flareWidth/2, 0);
+            entranceShape.lineTo(-rampWidth/2, 0.8);
+            entranceShape.lineTo(rampWidth/2, 0.8);
+            entranceShape.lineTo(flareWidth/2, 0);
+            entranceShape.lineTo(-flareWidth/2, 0);
+        }
+        
+        const entranceGeometry = new THREE.ExtrudeGeometry(entranceShape, {
+            depth: 0.15,
+            bevelEnabled: false
+        });
+        
+        const entranceMesh = new THREE.Mesh(entranceGeometry, entranceMaterial);
+        entranceMesh.position.set(x, y, 0.1);
+        entranceMesh.rotation.x = -Math.PI / 2;
+        
+        this.game.renderer.add(entranceMesh);
+        this.meshes.push(entranceMesh);
+        
+        // Add arrow indicator
+        this.addRampArrow(x, y - 0.5, isLeft);
+    }
+    
+    /**
+     * Add illuminated arrow pointing to ramp
+     */
+    addRampArrow(x, y, isLeft) {
+        const arrowGeometry = new THREE.ConeGeometry(0.3, 0.6, 3);
+        const arrowMaterial = new THREE.MeshBasicMaterial({
+            color: 0x00ff00,
+            transparent: true,
+            opacity: 0.8
+        });
+        
+        const arrow = new THREE.Mesh(arrowGeometry, arrowMaterial);
+        arrow.position.set(x, y, 0.3);
+        arrow.rotation.x = Math.PI / 2;
+        arrow.rotation.z = isLeft ? -Math.PI / 4 : Math.PI / 4;
+        
+        this.game.renderer.add(arrow);
+        this.meshes.push(arrow);
+    }
+    
+    /**
+     * Create ramp exit that deposits balls at top
+     */
+    createRampExit(exitPoint, isLeft) {
+        const exitMaterial = new THREE.MeshStandardMaterial({
+            color: 0x00ff66,
+            metalness: 0.5,
+            roughness: 0.4,
+            emissive: 0x00aa44,
+            emissiveIntensity: 0.5
+        });
+        
+        // Exit funnel
+        const exitGeometry = new THREE.ConeGeometry(0.5, 0.8, 16, 1, true);
+        const exitMesh = new THREE.Mesh(exitGeometry, exitMaterial);
+        exitMesh.position.set(exitPoint.x, exitPoint.y, exitPoint.z);
+        exitMesh.rotation.x = Math.PI;
+        
+        this.game.renderer.add(exitMesh);
+        this.meshes.push(exitMesh);
     }
 
     /**
