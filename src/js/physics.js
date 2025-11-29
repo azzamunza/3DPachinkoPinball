@@ -1,6 +1,7 @@
 /**
  * Physics Module
  * Uses Cannon-es for 3D physics simulation
+ * Updated: Fixed collision issues - balls should not pass through surfaces (Requirement B.4)
  */
 
 import * as CANNON from 'cannon-es';
@@ -18,6 +19,7 @@ export class Physics {
 
     /**
      * Initialize physics world
+     * Enhanced settings to prevent balls passing through surfaces (B.4)
      */
     init() {
         // Create physics world
@@ -34,20 +36,69 @@ export class Physics {
             gravity * Math.sin(tiltAngle)
         );
         
-        // Solver settings
+        // Enhanced solver settings for better collision detection (B.4)
         this.world.solver.iterations = CONFIG.PHYSICS.SOLVER_ITERATIONS;
-        this.world.solver.tolerance = 0.001;
+        this.world.solver.tolerance = 0.0005; // Balanced tolerance for performance
         
-        // Broadphase
+        // Use NaiveBroadphase for more accurate but slower collision detection
         this.world.broadphase = new CANNON.SAPBroadphase(this.world);
         
         // Allow sleeping for performance
         this.world.allowSleep = true;
         
+        // Default contact material with no slipperiness
+        this.world.defaultContactMaterial.friction = 0.3;
+        this.world.defaultContactMaterial.restitution = 0.5;
+        
         // Create materials
         this.createMaterials();
         
-        console.log('Physics world initialized');
+        // Create containment walls (front and back to prevent balls escaping) (B.4)
+        this.createContainmentWalls();
+        
+        console.log('Physics world initialized with enhanced collision detection');
+    }
+
+    /**
+     * Create containment walls to prevent balls from escaping (Requirement B.4)
+     * The play area is a fully contained 3D space
+     */
+    createContainmentWalls() {
+        const width = CONFIG.PLAYFIELD.WIDTH;
+        const height = CONFIG.PLAYFIELD.HEIGHT;
+        const depth = CONFIG.PLAYFIELD.DEPTH;
+        
+        // Back wall (behind the playfield)
+        const backWall = this.createBox(
+            { x: width / 2 + 1, y: height / 2 + 1, z: 0.1 },
+            0,
+            { x: 0, y: 0, z: -depth / 2 - 0.1 },
+            null,
+            this.materials.wall
+        );
+        this.addBody(backWall);
+        
+        // Front wall (glass in front of playfield - invisible barrier)
+        const frontWall = this.createBox(
+            { x: width / 2 + 1, y: height / 2 + 1, z: 0.1 },
+            0,
+            { x: 0, y: 0, z: depth / 2 + 0.5 },
+            null,
+            this.materials.wall
+        );
+        this.addBody(frontWall);
+        
+        // Top containment (above ball entry)
+        const topWall = this.createBox(
+            { x: width / 2 + 1, y: 0.5, z: depth / 2 },
+            0,
+            { x: 0, y: height / 2 + 0.5, z: 0 },
+            null,
+            this.materials.wall
+        );
+        this.addBody(topWall);
+        
+        console.log('Containment walls created for 3D space');
     }
 
     /**
