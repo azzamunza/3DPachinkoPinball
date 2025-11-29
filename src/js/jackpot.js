@@ -125,9 +125,9 @@ export class JackpotMachine {
         const slotArea = CONFIG.PLAYFIELD.PACHINKO.SLOT_MACHINE_AREA;
         const group = new THREE.Group();
         
-        // Position: CENTERED in playfield, flush with playing surface (z = -0.4 where balls roll)
-        // The front surface should be at z = -0.4 to be flush with the back playing surface
-        const flushZ = -0.4; // Same as the back playing surface where balls roll
+        // Position: CENTERED in playfield, flush with playing surface
+        // The front surface should be flush with the back playing surface where balls roll
+        const flushZ = CONFIG.PLAYFIELD.BACK_SURFACE_Z; // Use config constant for consistency
         group.position.set(slotArea.POSITION.x, slotArea.POSITION.y, flushZ);
         
         // Machine cabinet body - embedded into the playfield

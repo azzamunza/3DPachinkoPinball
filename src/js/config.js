@@ -46,6 +46,7 @@ export const CONFIG = {
         WIDTH: 14,  // Wider for Pachinko style
         HEIGHT: 16, // Slightly shorter ratio
         DEPTH: 1.5, // Contained depth for 3D space
+        BACK_SURFACE_Z: -0.4, // Z position of the back playing surface where pegs are mounted
         
         // Peg Configuration - Dense Pachinko Style (silver pins)
         PEGS: {

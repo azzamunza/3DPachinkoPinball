@@ -440,8 +440,8 @@ export class InputManager {
      * Fires 10 balls at 5 balls per second when middle mouse is held
      */
     startRapidFire() {
-        // Fire first ball immediately
-        this.cannonPower = 50; // Default power for rapid fire
+        // Fire first ball immediately with default power from config
+        this.cannonPower = (CONFIG.CANNON.POWER.DEFAULT || 2.0) * 25; // Scale default power to UI range
         this.bufferInput('fire');
         this.rapidFireCount = 1;
         this.rapidFireMax = 10;

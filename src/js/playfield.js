@@ -1257,150 +1257,6 @@ export class Playfield {
     }
 
     /**
-     * Create peg field legacy - not used anymore
-     */
-    createPegsLegacy() {
-        const cfg = CONFIG.PLAYFIELD.PEGS;
-        const width = CONFIG.PLAYFIELD.WIDTH;
-        const height = CONFIG.PLAYFIELD.HEIGHT;
-        
-        // Silver pins (like reference image)
-        const silverMaterial = this.game.renderer.createMaterial({
-            ...CONFIG.MATERIALS.PEG,
-            color: 0xC0C0C0, // Silver
-            metalness: 0.9,
-            roughness: 0.15
-        });
-        
-        // Gold accent pins for rails/guides
-        const goldMaterial = this.game.renderer.createMaterial({
-            ...CONFIG.MATERIALS.PEG,
-            color: 0xD4A84B, // Gold
-            metalness: 0.85,
-            roughness: 0.2
-        });
-        
-        // Skip zones for slot machine, bumpers, and pockets
-        const SKIP_ZONES = {
-            // Central slot machine area
-            SLOT_MACHINE: { 
-                xMin: -2.2, 
-                xMax: 2.2, 
-                yMin: -1.8, 
-                yMax: 1.8 
-            },
-            // Bumper positions
-            BUMPERS: [
-                { x: -3, y: 4, radius: 0.7 },
-                { x: 3, y: 4, radius: 0.7 }
-            ],
-            // V-Pocket catchment areas
-            V_POCKETS: [
-                { x: -3, y: -2, radius: 0.6 },
-                { x: 0, y: -1.5, radius: 0.8 },
-                { x: 3, y: -2, radius: 0.6 }
-            ]
-        };
-        
-        // === DENSE PIN GRID (Main playfield) ===
-        const vSpacing = cfg.VERTICAL_SPACING;
-        const hSpacing = cfg.HORIZONTAL_SPACING;
-        const startY = height / 2 - 2;  // Start from top (below header)
-        const endY = -height / 2 + 3;   // End above catchers
-        
-        let row = 0;
-        for (let y = startY; y > endY; y -= vSpacing) {
-            const isStaggered = row % 2 === 1;
-            const offset = isStaggered ? hSpacing / 2 : 0;
-            
-            // Narrower at top and bottom, wider in middle
-            const rowProgress = Math.abs(y) / (height / 2);
-            const rowWidth = (width - 2) * (1 - rowProgress * 0.3);
-            const numPegs = Math.floor(rowWidth / hSpacing);
-            const startX = -(numPegs - 1) * hSpacing / 2 + offset;
-            
-            for (let i = 0; i < numPegs; i++) {
-                const x = startX + i * hSpacing;
-                
-                // Check if should skip this position
-                let skip = false;
-                
-                // Skip slot machine area
-                if (x >= SKIP_ZONES.SLOT_MACHINE.xMin && 
-                    x <= SKIP_ZONES.SLOT_MACHINE.xMax &&
-                    y >= SKIP_ZONES.SLOT_MACHINE.yMin && 
-                    y <= SKIP_ZONES.SLOT_MACHINE.yMax) {
-                    skip = true;
-                }
-                
-                // Skip bumper zones
-                for (const bz of SKIP_ZONES.BUMPERS) {
-                    const dist = Math.sqrt(Math.pow(x - bz.x, 2) + Math.pow(y - bz.y, 2));
-                    if (dist < bz.radius) skip = true;
-                }
-                
-                // Skip V-pocket zones
-                for (const vp of SKIP_ZONES.V_POCKETS) {
-                    const dist = Math.sqrt(Math.pow(x - vp.x, 2) + Math.pow(y - vp.y, 2));
-                    if (dist < vp.radius) skip = true;
-                }
-                
-                // Skip outer edges
-                if (Math.abs(x) > width / 2 - 1) skip = true;
-                
-                if (!skip) {
-                    this.createPeg({ x, y, z: 0 }, silverMaterial);
-                }
-            }
-            row++;
-        }
-        
-        // === TOP CURVED ARCHES (Entry distribution) ===
-        this.createCurvedPegArch(height / 2 - 1.5, width / 2 - 1, 16, goldMaterial);
-        this.createCurvedPegArch(height / 2 - 2.2, width / 2 - 1.5, 14, silverMaterial);
-        
-        // === FUNNEL GUIDES toward slot machine ===
-        // Left funnel
-        for (let i = 0; i < 6; i++) {
-            const t = i / 5;
-            const x = -4 + t * 1.5;
-            const y = 3 - t * 3;
-            this.createPeg({ x, y, z: 0 }, goldMaterial);
-        }
-        // Right funnel
-        for (let i = 0; i < 6; i++) {
-            const t = i / 5;
-            const x = 4 - t * 1.5;
-            const y = 3 - t * 3;
-            this.createPeg({ x, y, z: 0 }, goldMaterial);
-        }
-        
-        // === LOWER GUIDES toward catchers ===
-        // Left guide
-        for (let i = 0; i < 5; i++) {
-            const t = i / 4;
-            const x = -4 + t * 0.5;
-            const y = -3 - t * 2;
-            this.createPeg({ x, y, z: 0 }, goldMaterial);
-        }
-        // Right guide
-        for (let i = 0; i < 5; i++) {
-            const t = i / 4;
-            const x = 4 - t * 0.5;
-            const y = -3 - t * 2;
-            this.createPeg({ x, y, z: 0 }, goldMaterial);
-        }
-        // Center guides
-        for (let i = 0; i < 4; i++) {
-            const t = i / 3;
-            this.createPeg({ x: -1.5 - t * 0.3, y: -2 - t * 2.5, z: 0 }, goldMaterial);
-            this.createPeg({ x: 1.5 + t * 0.3, y: -2 - t * 2.5, z: 0 }, goldMaterial);
-        }
-        
-        console.log(`Created ${this.pegs.length} silver pins (dense Pachinko layout)`);
-    }
-    
-    /**
      * Create curved arch of pegs at top
      */
     createCurvedPegArch(centerY, radius, numPegs, material) {
@@ -1423,8 +1279,9 @@ export class Playfield {
         const radius = CONFIG.PLAYFIELD.PEGS.RADIUS;
         const height = CONFIG.PLAYFIELD.PEGS.HEIGHT;
         
-        // Position peg at back surface (z = -0.4 so it contacts the backboard at z = -0.5)
-        const pegZ = -0.4 + height / 2; // Pegs sit on the back surface (Requirement #4)
+        // Position peg at back surface using config constant (Requirement #4)
+        const backSurfaceZ = CONFIG.PLAYFIELD.BACK_SURFACE_Z;
+        const pegZ = backSurfaceZ + height / 2; // Pegs sit on the back surface
         
         // Visual mesh (cylinder)
         const geometry = new THREE.CylinderGeometry(radius, radius, height, 8);
