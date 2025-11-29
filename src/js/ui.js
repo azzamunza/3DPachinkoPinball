@@ -3,6 +3,8 @@
  * Handles HUD updates, overlays, and settings modal
  */
 
+import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
+
 export class UIManager {
     constructor(game) {
         this.game = game;
@@ -359,6 +361,106 @@ export class UIManager {
                 }
             });
         }
+        
+        // Setup GLTF export button
+        this.setupExportButton();
+    }
+    
+    /**
+     * Setup GLTF export button
+     */
+    setupExportButton() {
+        const exportBtn = document.getElementById('export-gltf-btn');
+        
+        if (exportBtn) {
+            exportBtn.addEventListener('click', () => {
+                this.exportGLTF();
+            });
+        }
+    }
+    
+    /**
+     * Export the full 3D scene as GLTF
+     */
+    exportGLTF() {
+        const exportBtn = document.getElementById('export-gltf-btn');
+        
+        if (!this.game || !this.game.renderer || !this.game.renderer.scene) {
+            console.error('Cannot export: Scene not available');
+            return;
+        }
+        
+        // Update button state
+        if (exportBtn) {
+            exportBtn.disabled = true;
+            exportBtn.classList.add('exporting');
+            exportBtn.textContent = '⏳ Exporting...';
+        }
+        
+        const exporter = new GLTFExporter();
+        const scene = this.game.renderer.scene;
+        
+        // Export options
+        const options = {
+            binary: true, // Export as GLB (binary GLTF)
+            onlyVisible: true,
+            maxTextureSize: 4096
+        };
+        
+        exporter.parse(
+            scene,
+            (result) => {
+                // Handle the exported result
+                this.downloadGLTF(result, 'pachinko-pinball-3d-model.glb');
+                
+                // Reset button state
+                if (exportBtn) {
+                    exportBtn.disabled = false;
+                    exportBtn.classList.remove('exporting');
+                    exportBtn.textContent = '📥 Export GLTF';
+                }
+                
+                console.log('GLTF export completed successfully');
+            },
+            (error) => {
+                console.error('GLTF export failed:', error);
+                
+                // Reset button state
+                if (exportBtn) {
+                    exportBtn.disabled = false;
+                    exportBtn.classList.remove('exporting');
+                    exportBtn.textContent = '📥 Export GLTF';
+                }
+            },
+            options
+        );
+    }
+    
+    /**
+     * Download the GLTF/GLB file
+     */
+    downloadGLTF(data, filename) {
+        let blob;
+        
+        if (data instanceof ArrayBuffer) {
+            // Binary GLB format
+            blob = new Blob([data], { type: 'application/octet-stream' });
+        } else {
+            // JSON GLTF format
+            const jsonString = JSON.stringify(data, null, 2);
+            blob = new Blob([jsonString], { type: 'application/json' });
+            filename = filename.replace('.glb', '.gltf');
+        }
+        
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
     }
     
     /**
