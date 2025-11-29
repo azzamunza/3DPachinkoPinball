@@ -441,9 +441,9 @@ export class InputManager {
         this.cannonPower = (CONFIG.CANNON.POWER.DEFAULT || 2.0) * 25; // Scale default power to UI range
         this.bufferInput('fire');
         this.rapidFireCount = 1;
-        this.rapidFireMax = 50; // Increased max since we're firing faster
+        this.rapidFireMax = CONFIG.CANNON.RAPID_FIRE.MAX_BALLS;
         
-        // Start rapid fire interval (25 balls per second = 40ms interval) - 5x faster
+        // Start rapid fire interval - 5x faster than before
         this.rapidFireInterval = setInterval(() => {
             if (this.rapidFireCount >= this.rapidFireMax || !this.mouse.middleDown) {
                 this.stopRapidFire();
@@ -451,7 +451,7 @@ export class InputManager {
             }
             this.bufferInput('fire');
             this.rapidFireCount++;
-        }, 40); // 25 balls per second (5x faster than before)
+        }, CONFIG.CANNON.RAPID_FIRE.INTERVAL);
     }
     
     /**
@@ -573,9 +573,9 @@ export class InputManager {
         // Fire first ball immediately
         this.bufferInput('fire');
         this.rapidFireCount = 1;
-        this.rapidFireMax = 50;
+        this.rapidFireMax = CONFIG.CANNON.RAPID_FIRE.MAX_BALLS;
         
-        // Start rapid fire on hold (25 balls per second = 40ms interval) - 5x faster
+        // Start rapid fire on hold - 5x faster than before
         this.rapidFireInterval = setInterval(() => {
             if (this.rapidFireCount >= this.rapidFireMax || !this.isCharging) {
                 this.stopCharging();
@@ -583,7 +583,7 @@ export class InputManager {
             }
             this.bufferInput('fire');
             this.rapidFireCount++;
-        }, 40);
+        }, CONFIG.CANNON.RAPID_FIRE.INTERVAL);
     }
 
     /**
