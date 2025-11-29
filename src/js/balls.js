@@ -1,6 +1,7 @@
 /**
  * Ball Manager
  * Handles ball pooling, spawning, and lifecycle
+ * Updated: Enhanced CCD to prevent balls passing through surfaces (Requirement B.4)
  */
 
 import * as THREE from 'three';
@@ -28,7 +29,7 @@ export class BallManager {
         // Update UI
         this.game.ui.updateBallCount(this.totalBalls);
         
-        console.log('Ball manager initialized');
+        console.log('Ball manager initialized with enhanced collision detection');
     }
 
     /**
@@ -36,6 +37,11 @@ export class BallManager {
      */
     createPool() {
         const material = this.game.renderer.createMaterial(CONFIG.MATERIALS.BALL);
+        // Silver/chrome balls like reference image
+        material.color.setHex(0xC0C0C0);
+        material.metalness = 0.95;
+        material.roughness = 0.1;
+        
         const geometry = new THREE.SphereGeometry(
             CONFIG.PHYSICS.BALL.RADIUS,
             16,
@@ -50,7 +56,7 @@ export class BallManager {
     }
 
     /**
-     * Create a single ball
+     * Create a single ball with enhanced CCD (Requirement B.4)
      */
     createBall(geometry, material) {
         // Visual mesh
@@ -61,13 +67,17 @@ export class BallManager {
         
         this.game.renderer.add(mesh);
         
-        // Physics body
+        // Physics body with enhanced CCD settings
         const body = this.game.physics.createSphere(
             CONFIG.PHYSICS.BALL.RADIUS,
             CONFIG.PHYSICS.BALL.MASS,
             { x: 0, y: 100, z: 0 }, // Off-screen
             this.game.physics.materials.ball
         );
+        
+        // Enhanced Continuous Collision Detection (B.4)
+        body.ccdSpeedThreshold = 0.5; // Lower threshold = more CCD checks
+        body.ccdIterations = 15;      // More iterations = better accuracy
         
         body.userData = { isBall: true };
         body.sleep();

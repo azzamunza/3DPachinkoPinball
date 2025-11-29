@@ -88,7 +88,8 @@ export class Playfield {
     }
     
     /**
-     * Generate procedural background texture
+     * Generate procedural background texture - Wooden with cosmic theme
+     * Based on reference image: wooden texture with deep blue/purple cosmic graphics
      */
     generateBackgroundTexture(width, height) {
         const canvas = document.createElement('canvas');
@@ -97,22 +98,26 @@ export class Playfield {
         canvas.height = height * scale;
         const ctx = canvas.getContext('2d');
         
-        // Base gradient background (dark arcade theme)
-        const baseGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-        baseGradient.addColorStop(0, '#0a0a1a');    // Dark blue at top
-        baseGradient.addColorStop(0.3, '#1a1a3a'); // Deep purple
-        baseGradient.addColorStop(0.7, '#1a0a2a'); // Dark violet
-        baseGradient.addColorStop(1, '#0a0a1a');   // Back to dark
-        ctx.fillStyle = baseGradient;
+        // Base wooden texture (golden/oak color like reference)
+        const woodGradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
+        woodGradient.addColorStop(0, '#8B6914');    // Golden oak
+        woodGradient.addColorStop(0.3, '#A67C00');  // Lighter gold
+        woodGradient.addColorStop(0.5, '#8B6914');  // Golden oak
+        woodGradient.addColorStop(0.7, '#A67C00');  // Lighter gold
+        woodGradient.addColorStop(1, '#8B6914');    // Golden oak
+        ctx.fillStyle = woodGradient;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
-        // Add starfield effect
-        this.drawStarfield(ctx, canvas.width, canvas.height);
+        // Add wood grain texture
+        this.drawWoodGrain(ctx, canvas.width, canvas.height);
         
-        // Add geometric patterns (arcade style)
-        this.drawArcadePatterns(ctx, canvas.width, canvas.height);
+        // Add deep blue/purple cosmic accents (dragon shapes like reference)
+        this.drawCosmicAccents(ctx, canvas.width, canvas.height);
         
-        // Add neon grid lines
+        // Add corner cosmic zones (purple/magenta corners)
+        this.drawCornerZones(ctx, canvas.width, canvas.height);
+        
+        // Add neon grid lines (subtle)
         this.drawNeonGrid(ctx, canvas.width, canvas.height);
         
         // Add decorative elements
@@ -124,6 +129,115 @@ export class Playfield {
         const texture = new THREE.CanvasTexture(canvas);
         texture.needsUpdate = true;
         return texture;
+    }
+    
+    /**
+     * Draw wood grain texture
+     */
+    drawWoodGrain(ctx, width, height) {
+        ctx.strokeStyle = 'rgba(139, 90, 43, 0.3)';
+        ctx.lineWidth = 1;
+        
+        // Horizontal grain lines
+        for (let y = 0; y < height; y += 8) {
+            ctx.beginPath();
+            ctx.moveTo(0, y + Math.sin(y * 0.02) * 5);
+            for (let x = 0; x < width; x += 20) {
+                ctx.lineTo(x, y + Math.sin((y + x) * 0.02) * 5);
+            }
+            ctx.stroke();
+        }
+    }
+    
+    /**
+     * Draw cosmic accents (dark blue dragon-like shapes)
+     */
+    drawCosmicAccents(ctx, width, height) {
+        // Central dark blue cosmic area (where slot machine will be)
+        const centerX = width / 2;
+        const centerY = height / 2;
+        
+        // Draw swirling dragon-like cosmic pattern
+        ctx.fillStyle = 'rgba(10, 20, 50, 0.7)';
+        
+        // Left wing shape
+        ctx.beginPath();
+        ctx.moveTo(centerX - 100, centerY);
+        ctx.bezierCurveTo(
+            centerX - 300, centerY - 200,
+            centerX - 400, centerY + 100,
+            centerX - 200, centerY + 300
+        );
+        ctx.bezierCurveTo(
+            centerX - 100, centerY + 200,
+            centerX - 50, centerY + 100,
+            centerX - 100, centerY
+        );
+        ctx.fill();
+        
+        // Right wing shape
+        ctx.beginPath();
+        ctx.moveTo(centerX + 100, centerY);
+        ctx.bezierCurveTo(
+            centerX + 300, centerY - 200,
+            centerX + 400, centerY + 100,
+            centerX + 200, centerY + 300
+        );
+        ctx.bezierCurveTo(
+            centerX + 100, centerY + 200,
+            centerX + 50, centerY + 100,
+            centerX + 100, centerY
+        );
+        ctx.fill();
+        
+        // Upper cosmic curve
+        ctx.beginPath();
+        ctx.moveTo(centerX - 200, centerY - 300);
+        ctx.bezierCurveTo(
+            centerX - 100, centerY - 400,
+            centerX + 100, centerY - 400,
+            centerX + 200, centerY - 300
+        );
+        ctx.bezierCurveTo(
+            centerX + 100, centerY - 200,
+            centerX - 100, centerY - 200,
+            centerX - 200, centerY - 300
+        );
+        ctx.fill();
+    }
+    
+    /**
+     * Draw corner zones (purple/magenta cosmic corners like reference)
+     */
+    drawCornerZones(ctx, width, height) {
+        // Top-left corner
+        const gradient1 = ctx.createRadialGradient(0, 0, 0, 0, 0, width * 0.3);
+        gradient1.addColorStop(0, 'rgba(80, 20, 80, 0.8)');
+        gradient1.addColorStop(0.5, 'rgba(60, 10, 60, 0.5)');
+        gradient1.addColorStop(1, 'transparent');
+        ctx.fillStyle = gradient1;
+        ctx.fillRect(0, 0, width * 0.4, height * 0.3);
+        
+        // Top-right corner
+        const gradient2 = ctx.createRadialGradient(width, 0, 0, width, 0, width * 0.3);
+        gradient2.addColorStop(0, 'rgba(80, 20, 80, 0.8)');
+        gradient2.addColorStop(0.5, 'rgba(60, 10, 60, 0.5)');
+        gradient2.addColorStop(1, 'transparent');
+        ctx.fillStyle = gradient2;
+        ctx.fillRect(width * 0.6, 0, width * 0.4, height * 0.3);
+        
+        // Bottom corners
+        const gradient3 = ctx.createRadialGradient(0, height, 0, 0, height, width * 0.25);
+        gradient3.addColorStop(0, 'rgba(80, 20, 80, 0.6)');
+        gradient3.addColorStop(1, 'transparent');
+        ctx.fillStyle = gradient3;
+        ctx.fillRect(0, height * 0.7, width * 0.3, height * 0.3);
+        
+        const gradient4 = ctx.createRadialGradient(width, height, 0, width, height, width * 0.25);
+        gradient4.addColorStop(0, 'rgba(80, 20, 80, 0.6)');
+        gradient4.addColorStop(1, 'transparent');
+        ctx.fillStyle = gradient4;
+        ctx.fillRect(width * 0.7, height * 0.7, width * 0.3, height * 0.3);
     }
     
     /**
@@ -194,14 +308,14 @@ export class Playfield {
     }
     
     /**
-     * Draw neon grid effect
+     * Draw neon grid effect (subtle for Pachinko style)
      */
     drawNeonGrid(ctx, width, height) {
-        // Horizontal glowing lines
-        const numHLines = 20;
+        // Subtle horizontal glowing lines
+        const numHLines = 12;
         for (let i = 0; i < numHLines; i++) {
             const y = (i / numHLines) * height;
-            const alpha = 0.05 + Math.sin(i * 0.5) * 0.03;
+            const alpha = 0.02 + Math.sin(i * 0.5) * 0.01;
             
             ctx.beginPath();
             ctx.moveTo(0, y);
@@ -210,40 +324,44 @@ export class Playfield {
             ctx.lineWidth = 1;
             ctx.stroke();
         }
-        
-        // Perspective grid at bottom
-        ctx.save();
-        ctx.translate(width / 2, height * 0.95);
-        for (let i = -5; i <= 5; i++) {
-            ctx.beginPath();
-            ctx.moveTo(0, 0);
-            ctx.lineTo(i * 120, -height * 0.4);
-            ctx.strokeStyle = 'rgba(255, 0, 255, 0.1)';
-            ctx.lineWidth = 1;
-            ctx.stroke();
-        }
-        ctx.restore();
     }
     
     /**
-     * Draw decorative elements (icons, symbols)
+     * Draw decorative elements (icons, symbols) - Updated for Pachinko style
      */
     drawDecorativeElements(ctx, width, height) {
-        // Pachinkopolis logo/text effect at top
+        // PACHINKO header text (prominent, metallic style)
         ctx.save();
-        ctx.font = 'bold 60px Orbitron, Arial';
+        ctx.font = 'bold 80px Orbitron, Arial';
         ctx.textAlign = 'center';
-        ctx.fillStyle = 'rgba(255, 215, 0, 0.15)';
-        ctx.fillText('★ PACHINKO ★', width / 2, height * 0.08);
+        
+        // Metallic gradient for text
+        const textGradient = ctx.createLinearGradient(width * 0.3, 0, width * 0.7, 0);
+        textGradient.addColorStop(0, '#C0C0C0');
+        textGradient.addColorStop(0.3, '#FFFFFF');
+        textGradient.addColorStop(0.5, '#E0E0E0');
+        textGradient.addColorStop(0.7, '#FFFFFF');
+        textGradient.addColorStop(1, '#C0C0C0');
+        ctx.fillStyle = textGradient;
+        ctx.fillText('PACHINKO', width / 2, height * 0.06);
+        
+        // Add glow/shadow
+        ctx.shadowColor = 'rgba(0, 240, 255, 0.8)';
+        ctx.shadowBlur = 20;
+        ctx.fillText('PACHINKO', width / 2, height * 0.06);
         ctx.restore();
         
-        // Score zone labels
-        ctx.font = 'bold 24px Orbitron, Arial';
+        // Catcher zone labels at bottom
+        ctx.font = 'bold 28px Orbitron, Arial';
         ctx.textAlign = 'center';
-        ctx.fillStyle = 'rgba(0, 255, 128, 0.2)';
-        ctx.fillText('BONUS', width * 0.2, height * 0.8);
-        ctx.fillText('JACKPOT', width * 0.5, height * 0.75);
-        ctx.fillText('BONUS', width * 0.8, height * 0.8);
+        ctx.fillStyle = 'rgba(255, 215, 0, 0.6)';
+        ctx.fillText('50', width * 0.12, height * 0.92);
+        ctx.fillText('100', width * 0.30, height * 0.92);
+        ctx.fillStyle = 'rgba(255, 50, 50, 0.8)';
+        ctx.fillText('JACKPOT', width * 0.5, height * 0.92);
+        ctx.fillStyle = 'rgba(255, 215, 0, 0.6)';
+        ctx.fillText('100', width * 0.70, height * 0.92);
+        ctx.fillText('50', width * 0.88, height * 0.92);
         
         // Side arrows
         const drawArrow = (x, y, rotation) => {
@@ -285,68 +403,278 @@ export class Playfield {
     drawVignette(ctx, width, height) {
         const gradient = ctx.createRadialGradient(
             width / 2, height / 2, 0,
-            width / 2, height / 2, Math.max(width, height) * 0.7
+            width / 2, height / 2, Math.max(width, height) * 0.65
         );
         gradient.addColorStop(0, 'transparent');
-        gradient.addColorStop(0.7, 'transparent');
-        gradient.addColorStop(1, 'rgba(0, 0, 0, 0.6)');
+        gradient.addColorStop(0.6, 'transparent');
+        gradient.addColorStop(1, 'rgba(0, 0, 0, 0.5)');
         
         ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, width, height);
     }
 
     /**
-     * Add decorative patterns to backboard
+     * Add decorative patterns to backboard - Metallic silver frame with LED backlighting
+     * Based on reference image
      */
     addBackboardDecorations(width, height) {
-        // Neon border lines
-        const lineMaterial = new THREE.MeshBasicMaterial({ color: 0x00f0ff });
+        // Create metallic silver frame
+        this.createMetallicFrame(width, height);
         
-        // Top curved area outline
-        const curveGeometry = new THREE.RingGeometry(4, 4.1, 32, 1, 0, Math.PI);
-        const curveMesh = new THREE.Mesh(curveGeometry, lineMaterial);
-        curveMesh.position.set(0, 4, -0.45);
-        this.game.renderer.add(curveMesh);
+        // Add LED strip lighting around frame (blue, magenta, cyan)
+        this.createFrameLEDs(width, height);
         
-        // Side lines
-        const lineGeometry = new THREE.PlaneGeometry(0.1, height * 0.4);
+        // Add ball entry hole at top center
+        this.createBallEntryHole();
         
-        const leftLine = new THREE.Mesh(lineGeometry, lineMaterial);
-        leftLine.position.set(-width/2 + 0.5, -2, -0.45);
-        this.game.renderer.add(leftLine);
+        // Add ball rails (gold colored)
+        this.createBallRails(width, height);
         
-        const rightLine = new THREE.Mesh(lineGeometry, lineMaterial);
-        rightLine.position.set(width/2 - 0.5, -2, -0.45);
-        this.game.renderer.add(rightLine);
+        // Add illuminated geometric targets
+        this.createGeometricTargets();
+    }
+    
+    /**
+     * Create metallic silver frame around playfield
+     */
+    createMetallicFrame(width, height) {
+        const frameMaterial = new THREE.MeshStandardMaterial({
+            color: 0xA0A0A0, // Brushed silver
+            metalness: 0.9,
+            roughness: 0.3
+        });
         
-        // Add glowing corner accents
-        this.addCornerAccents(width, height);
+        const frameThickness = 0.4;
+        const frameDepth = 0.8;
+        
+        // Top frame bar
+        const topBarGeometry = new THREE.BoxGeometry(width + frameThickness * 2, frameThickness, frameDepth);
+        const topBar = new THREE.Mesh(topBarGeometry, frameMaterial);
+        topBar.position.set(0, height / 2 + frameThickness / 2, 0);
+        topBar.castShadow = true;
+        this.game.renderer.add(topBar);
+        this.meshes.push(topBar);
+        
+        // Bottom frame bar
+        const bottomBar = new THREE.Mesh(topBarGeometry, frameMaterial);
+        bottomBar.position.set(0, -height / 2 - frameThickness / 2, 0);
+        bottomBar.castShadow = true;
+        this.game.renderer.add(bottomBar);
+        this.meshes.push(bottomBar);
+        
+        // Left frame bar
+        const sideBarGeometry = new THREE.BoxGeometry(frameThickness, height, frameDepth);
+        const leftBar = new THREE.Mesh(sideBarGeometry, frameMaterial);
+        leftBar.position.set(-width / 2 - frameThickness / 2, 0, 0);
+        leftBar.castShadow = true;
+        this.game.renderer.add(leftBar);
+        this.meshes.push(leftBar);
+        
+        // Right frame bar
+        const rightBar = new THREE.Mesh(sideBarGeometry, frameMaterial);
+        rightBar.position.set(width / 2 + frameThickness / 2, 0, 0);
+        rightBar.castShadow = true;
+        this.game.renderer.add(rightBar);
+        this.meshes.push(rightBar);
+        
+        // Corner spheres (like reference image)
+        const cornerGeometry = new THREE.SphereGeometry(0.4, 16, 16);
+        const cornerMaterial = new THREE.MeshStandardMaterial({
+            color: 0x505050,
+            metalness: 0.95,
+            roughness: 0.2
+        });
+        
+        const cornerPositions = [
+            { x: -width / 2, y: height / 2 },
+            { x: width / 2, y: height / 2 },
+            { x: -width / 2, y: -height / 2 },
+            { x: width / 2, y: -height / 2 }
+        ];
+        
+        cornerPositions.forEach(pos => {
+            const corner = new THREE.Mesh(cornerGeometry, cornerMaterial);
+            corner.position.set(pos.x, pos.y, 0.3);
+            corner.castShadow = true;
+            this.game.renderer.add(corner);
+            this.meshes.push(corner);
+        });
+    }
+    
+    /**
+     * Create LED strip lighting around frame
+     */
+    createFrameLEDs(width, height) {
+        const ledColors = [0x00f0ff, 0xff00ff, 0x00f0ff, 0xff00ff];
+        const ledSpacing = 1.0;
+        
+        // Top edge LEDs
+        for (let x = -width / 2 + 1; x <= width / 2 - 1; x += ledSpacing) {
+            const colorIndex = Math.floor((x + width / 2) / ledSpacing) % ledColors.length;
+            this.createLED(x, height / 2 + 0.3, ledColors[colorIndex]);
+        }
+        
+        // Bottom edge LEDs
+        for (let x = -width / 2 + 1; x <= width / 2 - 1; x += ledSpacing) {
+            const colorIndex = Math.floor((x + width / 2) / ledSpacing) % ledColors.length;
+            this.createLED(x, -height / 2 - 0.3, ledColors[colorIndex]);
+        }
+        
+        // Left edge LEDs
+        for (let y = -height / 2 + 1; y <= height / 2 - 1; y += ledSpacing) {
+            const colorIndex = Math.floor((y + height / 2) / ledSpacing) % ledColors.length;
+            this.createLED(-width / 2 - 0.3, y, ledColors[colorIndex]);
+        }
+        
+        // Right edge LEDs
+        for (let y = -height / 2 + 1; y <= height / 2 - 1; y += ledSpacing) {
+            const colorIndex = Math.floor((y + height / 2) / ledSpacing) % ledColors.length;
+            this.createLED(width / 2 + 0.3, y, ledColors[colorIndex]);
+        }
+    }
+    
+    /**
+     * Create single LED light
+     */
+    createLED(x, y, color) {
+        const ledGeometry = new THREE.SphereGeometry(0.08, 8, 8);
+        const ledMaterial = new THREE.MeshBasicMaterial({
+            color: color,
+            transparent: true,
+            opacity: 0.9
+        });
+        const led = new THREE.Mesh(ledGeometry, ledMaterial);
+        led.position.set(x, y, 0.3);
+        this.game.renderer.add(led);
+        this.meshes.push(led);
+        
+        // Add point light for glow effect
+        const light = new THREE.PointLight(color, 0.15, 2);
+        light.position.set(x, y, 0.5);
+        this.game.renderer.add(light);
+    }
+    
+    /**
+     * Create ball entry hole at top center
+     */
+    createBallEntryHole() {
+        const holeRadius = 0.4;
+        
+        // Dark hole visual
+        const holeGeometry = new THREE.CircleGeometry(holeRadius, 24);
+        const holeMaterial = new THREE.MeshBasicMaterial({ color: 0x111111 });
+        const hole = new THREE.Mesh(holeGeometry, holeMaterial);
+        hole.position.set(0, CONFIG.PLAYFIELD.HEIGHT / 2 - 0.5, -0.4);
+        this.game.renderer.add(hole);
+        
+        // Gold ring around hole
+        const ringGeometry = new THREE.RingGeometry(holeRadius, holeRadius + 0.1, 24);
+        const ringMaterial = new THREE.MeshStandardMaterial({
+            color: 0xFFD700,
+            metalness: 0.8,
+            roughness: 0.2
+        });
+        const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+        ring.position.set(0, CONFIG.PLAYFIELD.HEIGHT / 2 - 0.5, -0.38);
+        this.game.renderer.add(ring);
+    }
+    
+    /**
+     * Create ball rails (gold colored curved rails like reference)
+     */
+    createBallRails(width, height) {
+        const railMaterial = new THREE.MeshStandardMaterial({
+            color: 0xD4A84B, // Gold
+            metalness: 0.7,
+            roughness: 0.3
+        });
+        
+        // Create curved outer rails
+        this.createCurvedRail(-width / 2 + 0.5, height / 2 - 2, -width / 2 + 2, -height / 2 + 3, railMaterial);
+        this.createCurvedRail(width / 2 - 0.5, height / 2 - 2, width / 2 - 2, -height / 2 + 3, railMaterial);
+        
+        // Create inner funnel rails toward slot machine
+        this.createCurvedRail(-3, 2, -1.5, 0, railMaterial);
+        this.createCurvedRail(3, 2, 1.5, 0, railMaterial);
+    }
+    
+    /**
+     * Create a curved rail segment
+     */
+    createCurvedRail(startX, startY, endX, endY, material) {
+        const curve = new THREE.QuadraticBezierCurve3(
+            new THREE.Vector3(startX, startY, 0),
+            new THREE.Vector3((startX + endX) / 2, (startY + endY) / 2, 0.2),
+            new THREE.Vector3(endX, endY, 0)
+        );
+        
+        const tubeGeometry = new THREE.TubeGeometry(curve, 20, 0.08, 8, false);
+        const rail = new THREE.Mesh(tubeGeometry, material);
+        rail.castShadow = true;
+        this.game.renderer.add(rail);
+        this.meshes.push(rail);
+    }
+    
+    /**
+     * Create geometric illuminated targets (like reference image)
+     */
+    createGeometricTargets() {
+        // Round illuminated targets (bumpers) positioned like reference
+        const targetPositions = [
+            { x: -3, y: 4, color: 0xFFD700 },  // Gold/orange left
+            { x: 3, y: 4, color: 0x9370DB }   // Purple/lavender right
+        ];
+        
+        targetPositions.forEach(target => {
+            // Target glow ring
+            const ringGeometry = new THREE.RingGeometry(0.5, 0.7, 32);
+            const ringMaterial = new THREE.MeshBasicMaterial({
+                color: target.color,
+                transparent: true,
+                opacity: 0.8
+            });
+            const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+            ring.position.set(target.x, target.y, -0.3);
+            this.game.renderer.add(ring);
+            
+            // Inner lit area
+            const innerGeometry = new THREE.CircleGeometry(0.5, 32);
+            const innerMaterial = new THREE.MeshBasicMaterial({
+                color: 0xFFFFFF,
+                transparent: true,
+                opacity: 0.5
+            });
+            const inner = new THREE.Mesh(innerGeometry, innerMaterial);
+            inner.position.set(target.x, target.y, -0.32);
+            this.game.renderer.add(inner);
+        });
+        
+        // Slot machine triggers (glowing geometric)
+        const triggerGeometry = new THREE.BoxGeometry(0.3, 0.6, 0.1);
+        const triggerMaterial = new THREE.MeshBasicMaterial({
+            color: 0xFF6600,
+            transparent: true,
+            opacity: 0.8
+        });
+        
+        // Position triggers near the slot machine
+        const triggerPositions = [
+            { x: -2.5, y: 1.5 },
+            { x: 2.5, y: 1.5 }
+        ];
+        
+        triggerPositions.forEach(pos => {
+            const trigger = new THREE.Mesh(triggerGeometry, triggerMaterial);
+            trigger.position.set(pos.x, pos.y, -0.3);
+            this.game.renderer.add(trigger);
+        });
     }
     
     /**
      * Add glowing corner accent lights
      */
     addCornerAccents(width, height) {
-        const accentMaterial = new THREE.MeshBasicMaterial({
-            color: 0xff00ff,
-            transparent: true,
-            opacity: 0.5
-        });
-        
-        const accentGeometry = new THREE.CircleGeometry(0.3, 16);
-        
-        const positions = [
-            { x: -width/2 + 0.5, y: height/2 - 0.5 },
-            { x: width/2 - 0.5, y: height/2 - 0.5 },
-            { x: -width/2 + 0.5, y: -height/2 + 0.5 },
-            { x: width/2 - 0.5, y: -height/2 + 0.5 }
-        ];
-        
-        positions.forEach(pos => {
-            const accent = new THREE.Mesh(accentGeometry, accentMaterial.clone());
-            accent.position.set(pos.x, pos.y, -0.45);
-            this.game.renderer.add(accent);
-        });
+        // Handled by createFrameLEDs now
     }
 
     /**

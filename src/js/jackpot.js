@@ -118,54 +118,66 @@ export class JackpotMachine {
 
     /**
      * Create 3D machine visual with spinning reels (visible on playfield)
-     * Positioned according to reference image: left of center, lower portion of playfield
+     * CENTERED in the playfield (as per reference image)
      */
     createMachineVisual() {
+        const slotArea = CONFIG.PLAYFIELD.PACHINKO.SLOT_MACHINE_AREA;
         const group = new THREE.Group();
-        // Position as per reference image: left of center, in the lower-middle area
-        group.position.set(-2, -4.5, 0.5);
+        // Position: CENTERED in playfield
+        group.position.set(slotArea.POSITION.x, slotArea.POSITION.y, slotArea.POSITION.z);
         
-        // Machine cabinet body - slightly larger and more prominent
-        const bodyGeometry = new THREE.BoxGeometry(3.5, 2.5, 1.2);
+        // Machine cabinet body - Modern arcade style
+        const bodyGeometry = new THREE.BoxGeometry(slotArea.WIDTH, slotArea.HEIGHT, 0.8);
         const bodyMaterial = new THREE.MeshStandardMaterial({
-            color: 0x8B0000, // Deep red like Dancing Dragons theme
-            metalness: 0.7,
-            roughness: 0.3
+            color: 0x1a1a2e, // Dark modern cabinet
+            metalness: 0.6,
+            roughness: 0.4
         });
         const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
         body.castShadow = true;
         group.add(body);
         
-        // Gold trim around the cabinet (Chinese theme)
-        const trimGeometry = new THREE.BoxGeometry(3.6, 2.6, 0.05);
+        // Metallic frame around the cabinet
+        const frameGeometry = new THREE.BoxGeometry(slotArea.WIDTH + 0.2, slotArea.HEIGHT + 0.2, 0.1);
+        const frameMaterial = new THREE.MeshStandardMaterial({
+            color: 0x808080, // Silver frame
+            metalness: 0.9,
+            roughness: 0.2
+        });
+        const frame = new THREE.Mesh(frameGeometry, frameMaterial);
+        frame.position.z = 0.4;
+        group.add(frame);
+        
+        // Gold trim accent
+        const trimGeometry = new THREE.BoxGeometry(slotArea.WIDTH + 0.1, slotArea.HEIGHT + 0.1, 0.05);
         const trimMaterial = new THREE.MeshStandardMaterial({
             color: 0xFFD700, // Gold
             metalness: 0.9,
             roughness: 0.1
         });
         const trim = new THREE.Mesh(trimGeometry, trimMaterial);
-        trim.position.z = 0.6;
+        trim.position.z = 0.45;
         group.add(trim);
         
-        // Create the reels display area (black background)
+        // Create the reels display area (dark screen)
         const displayBg = new THREE.Mesh(
-            new THREE.PlaneGeometry(3.2, 1.2),
-            new THREE.MeshBasicMaterial({ color: 0x111111 })
+            new THREE.PlaneGeometry(slotArea.WIDTH - 0.4, slotArea.HEIGHT - 0.6),
+            new THREE.MeshBasicMaterial({ color: 0x0a0a15 })
         );
-        displayBg.position.set(0, 0.2, 0.61);
+        displayBg.position.set(0, 0.1, 0.46);
         group.add(displayBg);
         
         // Create 3 spinning reels
         this.reel3DObjects = [];
-        const reelWidth = 0.9;
-        const reelSpacing = 1.0;
+        const reelWidth = 0.7;
+        const reelSpacing = 1.1;
         
         for (let i = 0; i < 3; i++) {
             const reelGroup = new THREE.Group();
-            reelGroup.position.set(-reelSpacing + i * reelSpacing, 0.2, 0.65);
+            reelGroup.position.set(-reelSpacing + i * reelSpacing, 0.1, 0.5);
             
             // Reel cylinder
-            const reelGeometry = new THREE.CylinderGeometry(0.4, 0.4, reelWidth, 16, 1, true);
+            const reelGeometry = new THREE.CylinderGeometry(0.35, 0.35, reelWidth, 16, 1, true);
             
             // Create a material array for the cylinder sides (the icons)
             const symbols = CONFIG.JACKPOT.SYMBOLS;
